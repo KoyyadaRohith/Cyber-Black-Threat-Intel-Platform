@@ -1,5 +1,5 @@
 ======================================================================
-          MALICIOUS IP INTELLIGENCE SYSTEM - WATCHLIST AUDIT
+          CYBER BLACK THREAT INTEL PLATFORM - WATCHLIST AUDIT
 ======================================================================
 Report Timestamp: 2026-06-05 22:08:51
 Total Watchlist Entries: 8

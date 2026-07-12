@@ -1,6 +1,6 @@
 {% extends "base_auth.html" %}
 
-{% block title %}Settings - Malicious IP Intelligence System{% endblock %}
+{% block title %}Settings - Cyber Black Threat Intel Platform{% endblock %}
 {% block page_title %}System Settings{% endblock %}
 {% block page_subtitle %}Manage account access, appearance, notifications, reporting, exports, security, and system details{% endblock %}
 
@@ -88,7 +88,7 @@
             </h4>
             <div class="form-group">
                 <label for="report_header" class="form-label">Custom Audit Report Header Name</label>
-                <input type="text" id="report_header" name="report_header" class="form-control" value="{{ settings.report_header or 'Malicious IP Audit Summary' }}" placeholder="E.g. Corporate IT Infrastructure Audit">
+                <input type="text" id="report_header" name="report_header" class="form-control" value="{{ settings.report_header or 'Cyber Black Threat Audit Summary' }}" placeholder="E.g. Corporate IT Infrastructure Audit">
             </div>
             <div class="form-group" style="display: flex; align-items: center; gap: 12px; margin-bottom: 0;">
                 <input type="checkbox" id="include_whois" name="include_whois" style="width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary);" {% if settings.include_whois or settings.include_whois is not defined %}checked{% endif %}>
@@ -172,6 +172,30 @@
             </div>
         </div>
         
+        <!-- SECTION 9: AI Intelligence Layer Settings -->
+        <div class="settings-section" style="margin-bottom: 30px; border-bottom: 1px solid var(--border-color); padding-bottom: 24px;">
+            <h4 style="font-size: 0.95rem; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="brain-circuit" style="width: 16px; height: 16px; color: var(--primary);"></i>
+                9. AI Intelligence Layer
+                <span style="font-size: 0.65rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 2px 7px; border-radius: 20px; letter-spacing: 0.05em; margin-left: 6px;">V5.0</span>
+            </h4>
+
+            <!-- AI Enabled toggle -->
+            <div class="form-group" style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; background: rgba(102,126,234,0.05); border: 1px solid rgba(102,126,234,0.15); border-radius: 8px; padding: 14px 16px;">
+                <input type="checkbox" id="ai_enabled" name="ai_enabled" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary);" {% if settings.ai_enabled is not false and settings.get('ai_enabled', true) != false %}checked{% endif %}>
+                <div>
+                    <label for="ai_enabled" style="font-weight: 600; font-size: 0.9rem; cursor: pointer; display: block; margin-bottom: 2px;">Enable AI Intelligence Layer</label>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">Activate AI-generated threat summaries, IOC explanations, recommendations and dashboard insights.</span>
+                </div>
+            </div>
+
+            <!-- Disclaimer note -->
+            <div style="background: rgba(102,126,234,0.05); border: 1px solid rgba(102,126,234,0.15); border-radius: 6px; padding: 12px 14px; margin-top: 8px; font-size: 0.78rem; color: var(--text-secondary); display: flex; gap: 10px; align-items: flex-start;">
+                <i data-lucide="info" style="width: 14px; height: 14px; color: var(--primary); flex-shrink: 0; margin-top: 1px;"></i>
+                <span>AI disclaimer: <em>"AI-generated analysis. Always verify findings before taking security actions."</em></span>
+            </div>
+        </div>
+
         <button type="submit" class="btn btn-primary" style="padding: 12px 24px; font-size: 1rem; width: 100%;">
             <i data-lucide="save"></i> Commit Configurations
         </button>

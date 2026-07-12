@@ -19,8 +19,7 @@ import services.risk_scoring as risk
 import services.threat_summary as summary
 import services.recommendations as recs
 import services.report_generator as report_gen
-import services.threat_intel_cache as intel_cache
-
+import services.ai_engine as ai_engine
 
 # Initialize directories
 Config.init_folders()
@@ -33,6 +32,25 @@ app.jinja_env.globals['Config'] = Config
 def hash_password(password):
     return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
+# Parallelized IP scanners to eliminate synchronous latency bottlenecks
+def fetch_ip_details_parallel(ip_address, ab_key, vt_key, use_mock):
+    if use_mock:
+        return (
+            abuse.get_mock_abuse_data(ip_address),
+            vt.get_mock_virustotal_data(ip_address),
+            whois.get_mock_whois_data(ip_address)
+        )
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        future_abuse = executor.submit(abuse.check_ip_abuse, ip_address, ab_key)
+        future_vt = executor.submit(vt.check_ip_virustotal, ip_address, vt_key)
+        future_whois = executor.submit(whois.get_whois_info, ip_address)
+        
+        abuse_data = future_abuse.result()
+        vt_data = future_vt.result()
+        whois_data = future_whois.result()
+    return abuse_data, vt_data, whois_data
+
 # Authentication check decorator
 def login_required(f):
     from functools import wraps
@@ -44,8 +62,11 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# Notification helper — stores activity events in session
+# Notification helper — stores activity events in Supabase
 def add_notification(icon, color, title, message):
+    if 'username' in session:
+        db.add_notification(session['username'], icon, color, title, message)
+    
     if 'notifications' not in session:
         session['notifications'] = []
     notifs = session['notifications']
@@ -56,7 +77,6 @@ def add_notification(icon, color, title, message):
         'message': message,
         'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     })
-    # Keep only latest 20
     session['notifications'] = notifs[:20]
 
 # Context processor to inject standard global variables
@@ -71,15 +91,41 @@ def inject_globals():
         if os.path.exists(avatar_filepath):
             avatar_url = url_for('static', filename=f'uploads/avatars/{avatar_filename}')
             
+    # Load dynamic notifications list from database
+    notifications_list = []
+    if 'username' in session:
+        try:
+            notifs = db.get_notifications(session['username'])
+            for n in notifs:
+                notifications_list.append({
+                    'icon': n.get('icon', 'bell'),
+                    'color': n.get('color', 'var(--primary)'),
+                    'title': n.get('title', ''),
+                    'message': n.get('message', ''),
+                    'time': n.get('created_at', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                })
+        except Exception:
+            notifications_list = session.get('notifications', [])
+    else:
+        notifications_list = session.get('notifications', [])
+        
     return {
         'time_now': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'active_page': request.endpoint,
         'global_avatar_url': avatar_url,
-        'notifications': session.get('notifications', [])
+        'notifications': notifications_list
     }
 
-# Helper: Load mock settings state for current user
+# Helper: Load settings state from Supabase
 def get_user_settings():
+    if 'username' in session:
+        try:
+            cfg = db.get_settings(session['username'])
+            session['settings'] = cfg
+            return cfg
+        except Exception:
+            pass
+            
     if 'settings' not in session:
         session['settings'] = {}
         
@@ -138,10 +184,49 @@ def login():
         username = request.form['username'].strip()
         password = request.form['password']
         
+        # Supabase Authentication Flow
         user = db.get_user(username)
+        email = None
+        if user:
+            email = user['email']
+        elif '@' in username:
+            email = username
+            user = db.get_user_by_email(email)
+            if user:
+                username = user['username']
+                
+        if email:
+            try:
+                from supabase import create_client
+                client = create_client(Config.SUPABASE_URL, Config.SUPABASE_ANON_KEY)
+                auth_pass = hash_password(password) # User's sign-in password is the SHA256 hex string
+                auth_res = client.auth.sign_in_with_password({"email": email, "password": auth_pass})
+                
+                if auth_res and auth_res.user:
+                    session['username'] = username
+                    session['email'] = email
+                    session['user_id'] = auth_res.user.id
+                    session['full_name'] = user.get('full_name', username.title()) if user else username.title()
+                    session['mobile_number'] = user.get('mobile_number', '') if user else ''
+                    session['access_token'] = auth_res.session.access_token
+                    
+                    # Force-update mock_mode to False on login to enable live API checking
+                    cfg = db.get_settings(username)
+                    if cfg and cfg.get('mock_mode') is not False:
+                        cfg['mock_mode'] = False
+                        db.save_settings(username, cfg)
+                    
+                    add_notification('log-in', 'var(--color-safe)', 'Login Successful', f"Welcome back, Analyst {session['full_name']}.")
+                    flash(f"Welcome back, Analyst {session['full_name']}.", "success")
+                    return redirect(url_for('dashboard'))
+            except Exception as auth_err:
+                print(f"Supabase auth failed: {auth_err}")
+                
+        # Offline/Mock fallback for registration/testing
         if user and user['password_hash'] == hash_password(password):
             session['username'] = user['username']
             session['email'] = user['email']
+            session['user_id'] = user.get('id')
             session['full_name'] = user.get('full_name', user['username'].title())
             session['mobile_number'] = user.get('mobile_number', '')
             add_notification('log-in', 'var(--color-safe)', 'Login Successful', f"Welcome back, Analyst {session['full_name']}.")
@@ -195,18 +280,31 @@ def register():
 def forgot_password():
     if request.method == 'POST':
         email = request.form['email'].strip()
+        try:
+            from supabase import create_client
+            client = create_client(Config.SUPABASE_URL, Config.SUPABASE_ANON_KEY)
+            client.auth.reset_password_for_email(email, {"redirect_to": url_for('login', _external=True)})
+        except Exception:
+            pass
         flash(f"Security key reset token dispatched to {email}. Check your corporate inbox.", "success")
         return redirect(url_for('login'))
     return render_template('forgot_password.html')
 
 @app.route('/logout')
 def logout():
+    try:
+        from supabase import create_client
+        client = create_client(Config.SUPABASE_URL, Config.SUPABASE_ANON_KEY)
+        client.auth.sign_out()
+    except Exception:
+        pass
     session.clear()
     return redirect(url_for('home'))
 
 @app.route('/clear-notifications', methods=['POST'])
 @login_required
 def clear_notifications():
+    db.clear_notifications(session['username'])
     session['notifications'] = []
     return jsonify(success=True)
 
@@ -372,6 +470,7 @@ def google_callback():
         # Log existing user in
         session['username'] = user['username']
         session['email'] = user['email']
+        session['user_id'] = user.get('id')
         session['full_name'] = user.get('full_name', user['username'].title())
         session['mobile_number'] = user.get('mobile_number', '')
         if picture or user.get('profile_photo_url'):
@@ -404,6 +503,7 @@ def google_callback():
         if success:
             session['username'] = username
             session['email'] = email
+            session['user_id'] = db._get_user_uuid(username)
             session['full_name'] = full_name
             session['mobile_number'] = ''
             if picture:
@@ -425,13 +525,36 @@ def dashboard():
     watchlist = db.get_watchlist(username)
     
     # Calculate widget states
+    safe_scans = len([r for r in history if r['classification'].lower() == 'safe'])
+    low_risk = len([r for r in history if r['classification'].lower() == 'low risk'])
+    suspicious = len([r for r in history if r['classification'].lower() == 'suspicious'])
+    high_risk = len([r for r in history if r['classification'].lower() == 'high risk'])
+    malicious = len([r for r in history if r['classification'].lower() == 'malicious'])
+    
+    # Today's scans
+    today_str = datetime.now().strftime('%Y-%m-%d')
+    todays_scans = len([r for r in history if r['date'].startswith(today_str)])
+    
+    # Top Threat Countries and ASNs (excluding Safe / Safe-Low classification)
+    from collections import Counter
+    threat_countries = [r['country'] for r in history if r['classification'].lower() not in ['safe', 'low risk'] and r.get('country') and r['country'] != 'Unknown']
+    top_countries = Counter(threat_countries).most_common(5)
+    
+    threat_asns = [f"{r['asn']} ({r['isp']})" for r in history if r['classification'].lower() not in ['safe', 'low risk'] and r.get('asn') and r['asn'] != 'Unknown']
+    top_asns = Counter(threat_asns).most_common(5)
+    
     stats = {
         'total_scans': len(history),
-        'safe_scans': len([r for r in history if r['classification'] == 'Safe']),
-        'suspicious_scans': len([r for r in history if r['classification'] == 'Suspicious']),
-        'malicious_scans': len([r for r in history if r['classification'] == 'Malicious']),
+        'safe_scans': safe_scans,
+        'low_risk_scans': low_risk,
+        'suspicious_scans': suspicious,
+        'high_risk_scans': high_risk,
+        'malicious_scans': malicious,
+        'todays_scans': todays_scans,
         'watchlist_count': len(watchlist),
-        'total_reports': len(history) # every scan has export capability
+        'total_reports': len(history),
+        'top_countries': top_countries,
+        'top_asns': top_asns
     }
     
     # Compile 7-day trend history
@@ -446,14 +569,53 @@ def dashboard():
     trend_labels = labels
     trend_counts = counts
     
-    # Filter last 10 activities for grid
-    recent_activity = sorted(history, key=lambda x: x['date'], reverse=True)[:10]
+    # Threat Sources
+    sources = [r.get('source', 'manual') for r in history]
+    source_groups = []
+    for s in sources:
+        if s == 'manual':
+            source_groups.append('Manual Scan')
+        elif s.startswith('api_'):
+            source_groups.append('API Ingestion')
+        else:
+            source_groups.append('Bulk File Ingest')
+    source_distribution = Counter(source_groups).most_common(5)
+    
+    # Top Investigated IPs
+    searched_ips = [r['ip'] for r in history]
+    top_investigated_ips = Counter(searched_ips).most_common(5)
+    
+    # Watchlist Growth
+    watchlist_labels = []
+    watchlist_counts = []
+    accumulated = 0
+    sorted_wl = sorted(watchlist, key=lambda x: x.get('created_at', ''))
+    for item in sorted_wl:
+        accumulated += 1
+        date_str = item.get('created_at', '')[:10]
+        if date_str:
+            try:
+                date_str = datetime.strptime(date_str, '%Y-%m-%d').strftime('%b %d')
+            except Exception:
+                pass
+        watchlist_labels.append(date_str)
+        watchlist_counts.append(accumulated)
+        
+    if not watchlist_labels:
+        watchlist_labels = [(datetime.now() - timedelta(days=i)).strftime('%b %d') for i in range(6, -1, -1)]
+        watchlist_counts = [0, 0, 0, 0, 0, 0, len(watchlist)]
+        
+    recent_activity = history[:10]
     
     return render_template(
         'dashboard.html',
         stats=stats,
         trend_labels=trend_labels,
         trend_counts=trend_counts,
+        source_distribution=source_distribution,
+        top_investigated_ips=top_investigated_ips,
+        watchlist_labels=watchlist_labels,
+        watchlist_counts=watchlist_counts,
         recent_activity=recent_activity
     )
 
@@ -466,9 +628,11 @@ def threat_analytics():
 
     total_scans = len(history)
     threat_breakdown = {
-        'Safe': len([r for r in history if r['classification'] == 'Safe']),
-        'Suspicious': len([r for r in history if r['classification'] == 'Suspicious']),
-        'Malicious': len([r for r in history if r['classification'] == 'Malicious'])
+        'Safe': len([r for r in history if r['classification'].lower() == 'safe']),
+        'Low Risk': len([r for r in history if r['classification'].lower() == 'low risk']),
+        'Suspicious': len([r for r in history if r['classification'].lower() == 'suspicious']),
+        'High Risk': len([r for r in history if r['classification'].lower() == 'high risk']),
+        'Malicious': len([r for r in history if r['classification'].lower() == 'malicious'])
     }
     total_watchlist = len(watchlist)
     total_reports = total_scans
@@ -503,7 +667,6 @@ def ip_investigation():
     error = None
     is_watched = False
 
-
     # If POST query or query parameter exists
     if request.method == 'POST':
         ip_address = request.form.get('ip_address', '').strip()
@@ -524,36 +687,68 @@ def ip_investigation():
                 if cached:
                     details = cached
 
-            # If no cached details were used/found, compute via persistent cache-first pipeline
+            # If no cached details were used/found, compute fresh
             if details is None:
+                import time
+                start_time = time.time()
+                
+                # Fetch config settings
                 cfg = get_user_settings()
+                use_mock = cfg.get('mock_mode', True)
+                ab_key = cfg.get('abuseipdb_key') or Config.ABUSEIPDB_API_KEY
+                vt_key = cfg.get('virustotal_key') or Config.VIRUSTOTAL_API_KEY
+                abuse_data, vt_data, whois_data = fetch_ip_details_parallel(ip_address, ab_key, vt_key, use_mock)
 
-                # If user asked to bypass session cache, still obey 24h persistent cache.
-                # A manual refresh action will pass force_refresh=1.
-                force_refresh = request.args.get('refresh', '').strip() == '1' or request.form.get('refresh', '').strip() == '1'
+                # Risk engines execution
+                risk_profile = risk.calculate_risk_score(abuse_data, vt_data, whois_data)
+                threat_sum = summary.generate_threat_summary(
+                    ip_address, risk_profile['score'], risk_profile['classification'],
+                    abuse_data, vt_data, whois_data
+                )
+                recs_list = recs.get_recommendations(risk_profile['classification'])
+                
+                duration_ms = int((time.time() - start_time) * 1000)
 
-                try:
-                    details = intel_cache.get_cached_intel(
-                        ip_address,
-                        cfg,
-                        ttl_hours=24,
-                        force_refresh=force_refresh
-                    )
-                except ValueError:
-                    error = f"'{ip_address}' is not a valid IPv4 network address format."
-                    details = None
-                    
-                    # Ensure watchlist state isn't stale
-                    is_watched = False
-                    
-                    return render_template(
-                        'ip_investigation.html',
-                        ip_address=ip_address,
-                        details=None,
-                        error=error,
-                        is_watched=is_watched
-                    )
+                details = {
+                    'ip': ip_address,
+                    'risk': risk_profile,
+                    'abuse': abuse_data,
+                    'vt': vt_data,
+                    'whois': whois_data,
+                    'summary': threat_sum,
+                    'recommendations': recs_list,
+                    'duration_ms': duration_ms,
+                    'sources_used': 'AbuseIPDB, VirusTotal, WHOIS',
+                    'actions_taken': 'Lookup Completed',
+                    'notes': '',
+                    'severity': 'Low',
+                    'tags': ''
+                }
 
+                # Log results to History and retrieve DB record ID
+                hist_record = db.add_history(
+                    username=session['username'],
+                    ip=ip_address,
+                    country=whois_data.get('country'),
+                    isp=whois_data.get('isp'),
+                    asn=whois_data.get('asn'),
+                    risk_score=risk_profile['score'],
+                    classification=risk_profile['classification'],
+                    threat_summary=threat_sum,
+                    recommendations="; ".join([r['action'] for r in recs_list]),
+                    abuse_score=abuse_data.get('abuse_score', 0),
+                    vt_detections=vt_data.get('malicious_count', 0),
+                    source='manual',
+                    duration_ms=duration_ms,
+                    sources_used='AbuseIPDB, VirusTotal, WHOIS',
+                    actions_taken='Lookup Completed',
+                    notes='',
+                    severity='Low',
+                    tags=''
+                )
+                
+                if hist_record:
+                    details['id'] = hist_record.get('id')
 
                 # Persist computed details in session so subsequent actions (Watchlist)
                 # can render the same classification.
@@ -561,56 +756,19 @@ def ip_investigation():
                     session['last_investigation_details'] = {}
                 session['last_investigation_details'][ip_address] = details
 
-                # Persist history/logs and malicious cache only when we actually computed
-                # (cache hits also represent a computed record for the UI).
-                cfg = get_user_settings()
-                risk_profile = details.get('risk', {})
-                abuse_data = details.get('abuse', {})
-                vt_data = details.get('vt', {})
-                whois_data = details.get('whois', {})
-                threat_sum = details.get('summary', '')
-                recs_list = details.get('recommendations', [])
-
-
-                # Log results to History
-                # NOTE: We preserve existing behavior (history append) for both cache hits and refreshes.
-                db.add_history(
-                    username=session['username'],
-                    ip=ip_address,
-                    country=whois_data.get('country'),
-                    isp=whois_data.get('isp'),
-                    asn=whois_data.get('asn'),
-                    risk_score=risk_profile.get('score', 0),
-                    classification=risk_profile.get('classification', 'Safe'),
-                    threat_summary=threat_sum,
-                    recommendations="; ".join([r['action'] for r in recs_list]) if recs_list else '',
-                    abuse_score=abuse_data.get('abuse_score', 0),
-                    vt_detections=vt_data.get('malicious_count', 0),
-                    source='manual'
-                )
-
                 # Cache known malicious targets
-                if risk_profile.get('classification') == 'Malicious':
-                    db.add_malicious_ip(ip_address, risk_profile.get('score', 0), 'Malicious', threat_sum)
-
+                if risk_profile['classification'] == 'Malicious':
+                    db.add_malicious_ip(ip_address, risk_profile['score'], 'Malicious', threat_sum)
 
                 # Add notification for the search
-                intel_meta = details.get('intel_meta', {})
-                cache_age = intel_meta.get('cache_age_hours', '')
-                source_status = intel_meta.get('source_status', 'Refreshed Result' if request.args.get('refresh','').strip()=='1' else 'Computed Result')
-
-                add_notification(
-                    'search',
-                    'var(--color-safe)' if risk_profile.get('classification') == 'Safe' else 'var(--color-suspicious)' if risk_profile.get('classification') == 'Suspicious' else 'var(--color-malicious)',
+                add_notification('search',
+                    'var(--color-safe)' if risk_profile['classification'] == 'Safe' else 'var(--color-suspicious)' if risk_profile['classification'] == 'Suspicious' else 'var(--color-malicious)',
                     f"IP Investigated: {ip_address}",
-                    f"Classification: {risk_profile.get('classification')} — Risk Score: {risk_profile.get('score')}/100 | {source_status} | Cache Age: {cache_age}h"
-                )
-
+                    f"Classification: {risk_profile['classification']} — Risk Score: {risk_profile['score']}/100")
 
                 # Automation check: check if it matches auto-watchlist threshold
                 auto_watchlist_score = int(cfg.get('auto_watchlist_score', 75))
-                if risk_profile.get('score', 0) >= auto_watchlist_score:
-
+                if risk_profile['score'] >= auto_watchlist_score:
                     db.add_to_watchlist(
                         ip_address, session['username'], risk_profile['score'],
                         risk_profile['classification'], "Auto-Watchlist: Score limit exceeded"
@@ -622,20 +780,13 @@ def ip_investigation():
         except ValueError:
             error = f"'{ip_address}' is not a valid IPv4 network address format."
 
-    # Provide cache transparency metadata to UI even on cache hits.
-    intel_meta = None
-    if details:
-        intel_meta = details.get('intel_meta')
-
     return render_template(
         'ip_investigation.html',
         ip_address=ip_address,
         details=details,
         error=error,
-        is_watched=is_watched,
-        intel_meta=intel_meta
+        is_watched=is_watched
     )
-
 
 @app.route('/results/details/<ip_address>')
 @login_required
@@ -696,27 +847,22 @@ def analysis_pipeline():
 @login_required
 def api_analyze_single():
     ip = request.args.get('ip', '').strip()
-    refresh = request.args.get('refresh', '').strip() == '1'
-
     if not ip:
-
         return jsonify({'error': 'Missing target'}), 400
         
-    # cache-first: prevents inconsistent results + reduces API calls
     cfg = get_user_settings()
-    try:
-        details = intel_cache.get_cached_intel(ip, cfg, ttl_hours=24, force_refresh=refresh)
-
-    except ValueError:
-        return jsonify({'error': 'Invalid IP format'}), 400
-
-    risk_profile = details.get('risk', {})
-    abuse_data = details.get('abuse', {})
-    vt_data = details.get('vt', {})
-    whois_data = details.get('whois', {})
-    threat_sum = details.get('summary', '')
-    recs_list = details.get('recommendations', [])
-
+    use_mock = cfg.get('mock_mode', True)
+    
+    ab_key = cfg.get('abuseipdb_key') or Config.ABUSEIPDB_API_KEY
+    vt_key = cfg.get('virustotal_key') or Config.VIRUSTOTAL_API_KEY
+    abuse_data, vt_data, whois_data = fetch_ip_details_parallel(ip, ab_key, vt_key, use_mock)
+    
+    risk_profile = risk.calculate_risk_score(abuse_data, vt_data, whois_data)
+    threat_sum = summary.generate_threat_summary(
+        ip, risk_profile['score'], risk_profile['classification'],
+        abuse_data, vt_data, whois_data
+    )
+    recs_list = recs.get_recommendations(risk_profile['classification'])
     
     # Save automatically to operational history archive (marked as bulk parsed)
     db.add_history(
@@ -725,50 +871,36 @@ def api_analyze_single():
         country=whois_data.get('country'),
         isp=whois_data.get('isp'),
         asn=whois_data.get('asn'),
-        risk_score=risk_profile.get('score', 0),
-        classification=risk_profile.get('classification', 'Safe'),
+        risk_score=risk_profile['score'],
+        classification=risk_profile['classification'],
         threat_summary=threat_sum,
-        recommendations="; ".join([r['action'] for r in recs_list]) if recs_list else '',
+        recommendations="; ".join([r['action'] for r in recs_list]),
         abuse_score=abuse_data.get('abuse_score', 0),
         vt_detections=vt_data.get('malicious_count', 0),
         source=session.get('upload_filename', 'bulk_upload')
     )
-
     
-    if risk_profile.get('classification') == 'Malicious':
-        db.add_malicious_ip(ip, risk_profile.get('score', 0), 'Malicious', threat_sum)
-
+    if risk_profile['classification'] == 'Malicious':
+        db.add_malicious_ip(ip, risk_profile['score'], 'Malicious', threat_sum)
         
     # Auto Watchlist Threshold check
     auto_watchlist_score = int(cfg.get('auto_watchlist_score', 75))
-    if risk_profile.get('score', 0) >= auto_watchlist_score:
-
+    if risk_profile['score'] >= auto_watchlist_score:
         db.add_to_watchlist(
-            ip, session['username'], risk_profile.get('score', 0),
-            risk_profile.get('classification', 'Safe'), "Auto-Watchlist Ingest Threshold Exceeded"
+            ip, session['username'], risk_profile['score'],
+            risk_profile['classification'], "Auto-Watchlist Ingest Threshold Exceeded"
         )
-
         
-    intel_meta = details.get('intel_meta', {}) if 'details' in locals() else {}
-
-
     return jsonify({
         'ip': ip,
-        'risk_score': risk_profile.get('score', 0),
-        'classification': risk_profile.get('classification', 'Safe'),
+        'risk_score': risk_profile['score'],
+        'classification': risk_profile['classification'],
         'country': whois_data.get('country'),
         'isp': whois_data.get('isp'),
-        'asn': whois_data.get('asn'),
-        'cache_age_hours': intel_meta.get('cache_age_hours', ''),
-        'source_status': intel_meta.get('source_status', '')
+        'asn': whois_data.get('asn')
     })
 
-
-
-
-
 @app.route('/api/save-bulk-session', methods=['POST'])
-
 @login_required
 def save_bulk_session():
     data = request.get_json()
@@ -780,16 +912,8 @@ def save_bulk_session():
     batch_id = f"{filename}_{batch_timestamp}".replace('.', '_').replace(' ', '_')
     
     # We update the source values in history matching these results to index this batch
-    history = db.get_history()
     for res in results:
-        # Match recent additions from bulk file upload in history and tag them
-        for row in reversed(history):
-            if row.get('username', '').lower() == session['username'].lower() and row['ip'] == res['ip'] and row['source'] == filename:
-                row['source'] = batch_id
-                break
-                
-    # Rewrite the updated history entries back
-    db._write_csv(db.HISTORY_FILE, db.HISTORY_FIELDS, history)
+        db.update_investigation_source(session['username'], res['ip'], filename, batch_id)
     
     # Return batch reference ID
     return jsonify({'batch_id': batch_id})
@@ -878,6 +1002,25 @@ def watchlist_delete():
     # Redirect back to the investigation page while reusing cached details
     # so the displayed classification doesn't change after watchlist actions.
     return redirect(url_for('ip_investigation', ip_address=ip, use_cached=1))
+
+
+
+@app.route('/investigations/<investigation_id>/notes', methods=['POST'])
+@login_required
+def update_notes(investigation_id):
+    username = session['username']
+    notes = request.form.get('notes', '').strip()
+    severity = request.form.get('severity', 'Low').strip()
+    tags = request.form.get('tags', '').strip()
+    actions_taken = request.form.get('actions_taken', '').strip() or None
+    
+    success = db.update_investigation_notes(investigation_id, username, notes, severity, tags, actions_taken)
+    if success:
+        flash("Analyst notes, tags, and severity logs updated.", "success")
+    else:
+        flash("Failed to update notes.", "error")
+        
+    return redirect(request.referrer or url_for('history'))
 
 @app.route('/history')
 @login_required
@@ -1021,7 +1164,13 @@ def download_report(report_id):
             'vt': vt_data,
             'whois': whois_data,
             'summary': row.get('threat_summary', ''),
-            'recommendations': recs_list
+            'recommendations': recs_list,
+            'duration_ms': row.get('duration_ms', 0),
+            'sources_used': row.get('sources_used', 'AbuseIPDB, VirusTotal, WHOIS'),
+            'actions_taken': row.get('actions_taken', 'Lookup Completed'),
+            'notes': row.get('notes', ''),
+            'severity': row.get('severity', 'Low'),
+            'tags': row.get('tags', '')
         }
         
         # Save individual HTML file to reports/pdf/
@@ -1072,7 +1221,7 @@ def download_report(report_id):
         
         if format_type == 'csv':
             # Export CSV file download
-            csv_data = report_gen.generate_csv_report(batch_results, db.HISTORY_FIELDS)
+            csv_data = report_gen.generate_csv_report(batch_results)
             fn = f"MaliciousIP_Batch_Report_{filename}.csv"
             file_path = Config.REPORTS_CSV / fn
             with open(file_path, "w", encoding="utf-8", newline="") as f:
@@ -1118,7 +1267,7 @@ def download_report(report_id):
     # Case 3: History & Watchlist general backups (CSV and TXT)
     elif report_id in ['history_csv', 'watchlist_csv', 'history_txt', 'watchlist_txt']:
         if report_id == 'history_csv':
-            csv_data = report_gen.generate_csv_report(history, db.HISTORY_FIELDS)
+            csv_data = report_gen.generate_csv_report(history)
             fn = "MaliciousIP_Investigation_History_Audit.csv"
             file_path = Config.REPORTS_CSV / fn
             mimetype = "text/csv"
@@ -1133,7 +1282,7 @@ def download_report(report_id):
                 f.write(txt_data)
         elif report_id == 'watchlist_csv':
             watchlist_data = db.get_watchlist(username)
-            csv_data = report_gen.generate_csv_report(watchlist_data, db.WATCHLIST_FIELDS)
+            csv_data = report_gen.generate_csv_report(watchlist_data)
             fn = "MaliciousIP_Watchlist_Audit.csv"
             file_path = Config.REPORTS_CSV / fn
             mimetype = "text/csv"
@@ -1188,7 +1337,7 @@ def profile():
             location=location or "Hyderabad, Telangana, India",
             bio=bio,
             role=role or 'Threat Analyst',
-            organization=organization or 'Malicious IP Intelligence System'
+            organization=organization or 'Cyber Black Threat Intel Platform'
         )
         if not success:
             return jsonify(success=False, message=message), 400
@@ -1215,7 +1364,7 @@ def profile():
             'email': updated_user.get('email', ''),
             'location': updated_user.get('location', ''),
             'role': updated_user.get('role', 'Threat Analyst'),
-            'organization': updated_user.get('organization', 'Malicious IP Intelligence System'),
+            'organization': updated_user.get('organization', 'Cyber Black Threat Intel Platform'),
             'created_at': updated_user.get('created_at', ''),
             'bio': updated_user.get('bio', '')
         })
@@ -1270,7 +1419,7 @@ def settings():
     if request.method == 'POST':
         # Update settings dict from form inputs
         for key, val in request.form.items():
-            if key in ['mock_mode', 'email_alerts', 'desktop_notifications', 'include_whois']:
+            if key in ['mock_mode', 'email_alerts', 'desktop_notifications', 'include_whois', 'ai_enabled']:
                 continue
             cfg[key] = val.strip()
             
@@ -1285,12 +1434,15 @@ def settings():
         cfg['email_alerts'] = 'email_alerts' in request.form
         cfg['desktop_notifications'] = 'desktop_notifications' in request.form
         cfg['include_whois'] = 'include_whois' in request.form
+        cfg['ai_enabled'] = 'ai_enabled' in request.form
         
         session['settings'] = cfg
+        db.save_settings(session['username'], cfg)
         
         # Verify if API keys are provided when mock mode is turned off
         if not cfg['mock_mode'] and not cfg.get('abuseipdb_key') and not cfg.get('virustotal_key'):
             cfg['mock_mode'] = True
+            db.save_settings(session['username'], cfg) # Update DB too
             flash("Configurations updated. Mock mode enforced because API keys are blank.", "warning")
         else:
             flash("Console configurations committed.", "success")
@@ -1306,18 +1458,198 @@ def settings():
     }
     return render_template('settings.html', settings=cfg, system_info=system_info)
 
+# ============================================================
+# V5.0 AI INTELLIGENCE LAYER ROUTES
+# ============================================================
+
+@app.route('/api/ai/analyze/<ip_address>')
+@login_required
+def ai_analyze(ip_address):
+    """
+    Async AI analysis endpoint — called by the browser after investigation loads.
+    Returns JSON so the frontend can populate the AI panel without blocking the scan.
+    """
+    cfg = get_user_settings()
+    
+    if not cfg.get('ai_enabled', True):
+        return jsonify({'disabled': True, 'message': 'AI Analysis is disabled in settings.'})
+    
+    # Find the most recent investigation row for this IP
+    history = db.get_history(session['username'])
+    row = next((r for r in history if r['ip'] == ip_address), None)
+    
+    if not row:
+        return jsonify({'error': 'Investigation record not found. Run a scan first.'}), 404
+    
+    try:
+        result = ai_engine.analyze_investigation(row, cfg)
+        result['disclaimer'] = 'AI-generated analysis. Always verify findings before taking security actions.'
+        return jsonify(result)
+    except Exception as e:
+        print(f"[AI ROUTE ERROR] analyze failed: {e}")
+        return jsonify({'error': 'AI analysis temporarily unavailable.', 'fallback': True}), 500
+
+
+@app.route('/api/ai/insights')
+@login_required
+def ai_insights():
+    """Return AI-generated dashboard insight bullets as JSON."""
+    cfg = get_user_settings()
+    history = db.get_history(session['username'])
+    try:
+        bullets = ai_engine.generate_ai_insights(history, cfg)
+        return jsonify({'insights': bullets})
+    except Exception as e:
+        print(f"[AI ROUTE ERROR] insights failed: {e}")
+        return jsonify({'insights': ['AI insight generation temporarily unavailable.']})
+
+
+@app.route('/api/ai/search', methods=['POST'])
+@login_required
+def ai_natural_search():
+    """
+    Natural Language Search — convert a plain English query into filtered investigation results.
+    Examples: 'Show all malicious IPs this week' / 'Find investigations from Amazon ASN'
+    """
+    query = request.json.get('query', '').strip().lower() if request.is_json else request.form.get('query', '').strip().lower()
+    
+    if not query:
+        return jsonify({'error': 'Query cannot be empty.'}), 400
+    
+    history = db.get_history(session['username'])
+    
+    # Parse the natural language query with rule-based + keyword extraction
+    results = _nl_search_filter(query, history)
+    
+    return jsonify({
+        'query': query,
+        'count': len(results),
+        'results': results[:50]  # cap at 50
+    })
+
+
+def _nl_search_filter(query, history):
+    """
+    Parse natural language query keywords into DB filter criteria.
+    Supports: classification, country, ASN/ISP, time ranges, watchlist.
+    """
+    from datetime import datetime, timedelta
+    
+    filtered = list(history)
+    
+    # Time filters
+    now = datetime.utcnow()
+    if 'today' in query:
+        filtered = [r for r in filtered if r['date'][:10] == now.strftime('%Y-%m-%d')]
+    elif 'this week' in query or 'week' in query:
+        week_ago = (now - timedelta(days=7)).strftime('%Y-%m-%d')
+        filtered = [r for r in filtered if r['date'][:10] >= week_ago]
+    elif 'this month' in query or 'month' in query:
+        month_ago = (now - timedelta(days=30)).strftime('%Y-%m-%d')
+        filtered = [r for r in filtered if r['date'][:10] >= month_ago]
+    
+    # Classification filters
+    if 'malicious' in query:
+        filtered = [r for r in filtered if r['classification'].lower() == 'malicious']
+    elif 'high risk' in query:
+        filtered = [r for r in filtered if r['classification'].lower() == 'high risk']
+    elif 'suspicious' in query:
+        filtered = [r for r in filtered if r['classification'].lower() == 'suspicious']
+    elif 'low risk' in query:
+        filtered = [r for r in filtered if r['classification'].lower() == 'low risk']
+    elif 'safe' in query and 'not safe' not in query:
+        filtered = [r for r in filtered if r['classification'].lower() == 'safe']
+    
+    # ISP / ASN filters — look for quoted strings or known provider names
+    for keyword in ['amazon', 'google', 'microsoft', 'cloudflare', 'digitalocean', 'linode', 'ovh', 'hetzner', 'alibaba']:
+        if keyword in query:
+            filtered = [r for r in filtered if keyword in (r.get('isp') or '').lower() or keyword in (r.get('asn') or '').lower()]
+            break
+    
+    # Country filter — detect "from [country]" pattern
+    import re
+    country_match = re.search(r'from\s+([a-z\s]+?)(?:\s+asn|\s+ip|\s+investig|$)', query)
+    if country_match:
+        country_term = country_match.group(1).strip()
+        filtered = [r for r in filtered if country_term in (r.get('country') or '').lower()]
+    
+    return filtered
+
+
+@app.route('/api/ai/report/<ip_address>')
+@login_required
+def ai_generate_report(ip_address):
+    """
+    Generate full AI SOC executive report for a specific IP and return it as plain text.
+    """
+    cfg = get_user_settings()
+    history = db.get_history(session['username'])
+    row = next((r for r in history if r['ip'] == ip_address), None)
+    
+    if not row:
+        return jsonify({'error': 'No investigation record found for this IP.'}), 404
+    
+    try:
+        analysis = ai_engine.analyze_investigation(row, cfg)
+        
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
+        report_lines = [
+            "=" * 70,
+            "  CYBER BLACK THREAT INTEL PLATFORM — AI SOC EXECUTIVE REPORT",
+            "=" * 70,
+            f"  Generated : {timestamp}",
+            f"  Target IP : {ip_address}",
+            f"  AI Engine : {analysis.get('provider', 'Gemini')} / {analysis.get('model', 'gemini-1.5-flash')}",
+            f"  Cached    : {'Yes' if analysis.get('cached') else 'No'}",
+            "-" * 70,
+            "",
+            "1. EXECUTIVE SUMMARY",
+            "-" * 70,
+            analysis.get('summary', 'N/A'),
+            "",
+            "2. OVERALL THREAT ASSESSMENT",
+            "-" * 70,
+            analysis.get('assessment', 'N/A'),
+            "",
+            "3. KEY FINDINGS & IOC ANALYSIS",
+            "-" * 70,
+            analysis.get('findings', 'N/A'),
+            "",
+            "4. INDICATORS OF COMPROMISE EXPLANATION",
+            "-" * 70,
+            analysis.get('ioc_explanation', 'N/A'),
+            "",
+            "5. RECOMMENDED SECURITY POSTURE",
+            "-" * 70,
+            analysis.get('recommendation', 'N/A'),
+            "",
+            "6. SOC TEAM NEXT STEPS",
+            "-" * 70,
+            analysis.get('next_steps', 'N/A'),
+            "",
+            "-" * 70,
+            f"  AI Confidence Score: {analysis.get('confidence_score', 85)}%",
+            f"  Processing Time    : {analysis.get('processing_time_ms', 0)} ms",
+            "-" * 70,
+            "  ⚠  DISCLAIMER: AI-generated analysis. Always verify findings before",
+            "     taking security actions.",
+            "=" * 70,
+        ]
+        
+        report_text = "\n".join(report_lines)
+        return Response(
+            report_text,
+            mimetype='text/plain',
+            headers={'Content-Disposition': f'attachment; filename=AI_SOC_Report_{ip_address.replace(".", "_")}.txt'}
+        )
+    except Exception as e:
+        print(f"[AI ROUTE ERROR] report generation failed: {e}")
+        return jsonify({'error': 'Report generation failed.'}), 500
+
+
 # --- RUN APPLICATION ---
 
-import os
-
 if __name__ == '__main__':
-    print("[*] Starting Malicious IP Intelligence System...")
+    print("[*] Starting Cyber Black Threat Intel Platform...")
     print(f"[*] Base Workspace: {Config.BASE_DIR}")
-
-    port = int(os.environ.get("PORT", Config.PORT))
-
-    app.run(
-        host="0.0.0.0",
-        port=port,
-        debug=Config.DEBUG
-    )
+    app.run(port=Config.PORT, debug=Config.DEBUG)

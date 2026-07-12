@@ -9,8 +9,8 @@
                 <img src="{{ url_for('static', filename='img/logo_shield.png') }}" style="width: 100%; height: 100%; object-fit: cover;" alt="Logo">
             </div>
             <div style="display: flex; flex-direction: column; gap: 2px;">
-                <span class="brand-text" style="background: none !important; -webkit-text-fill-color: skyblue !important; color: skyblue !important; text-transform: none !important; font-weight: 700;">Malicious IP</span>
-                <span style="font-size: 0.75rem; color: var(--text-secondary); letter-spacing: 0.03em;">Intelligence System</span>
+                <span class="brand-text" style="background: none !important; -webkit-text-fill-color: skyblue !important; color: skyblue !important; text-transform: none !important; font-weight: 700;">Cyber Black</span>
+                <span style="font-size: 0.75rem; color: var(--text-secondary); letter-spacing: 0.03em;">Threat Intel Platform</span>
             </div>
         </div>
         
@@ -121,8 +121,8 @@
                         <div class="notifications-container" style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto;">
                             {% if notifications %}
                                 {% for notif in notifications %}
-                                <div style="{% if not loop.last %}border-bottom: 1px solid rgba(255,255,255,0.03); {% endif %}padding-bottom: 8px; display: flex; gap: 10px;">
-                                    <i data-lucide="{{ notif.icon }}" style="color: {{ notif.color }}; width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px;"></i>
+                                <div class="{% if not loop.last %}not-last-item{% endif %}" style="padding-bottom: 8px; display: flex; gap: 10px;">
+                                    <i data-lucide="{{ notif.icon }}" class="notif-icon-{{ notif.color.replace('var(--', '').replace(')', '') if 'var(--' in notif.color else 'primary' }}" style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px;"></i>
                                     <div>
                                         <p style="font-size: 0.8rem; color: var(--text-primary); font-weight: 500; margin-bottom: 2px;">{{ notif.title }}</p>
                                         <p style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3;">{{ notif.message }}</p>
@@ -134,7 +134,7 @@
                                 <div style="text-align: center; padding: 20px 10px; color: var(--text-muted);">
                                     <i data-lucide="bell-off" style="width: 24px; height: 24px; display: block; margin: 0 auto 8px;"></i>
                                     <p style="font-size: 0.8rem;">No activity recorded yet.</p>
-                                    <p style="font-size: 0.7rem;">Searches, exports, and changes will appear here.</p>
+                                    <p style="font-size: 0.75rem;">Searches, exports, and changes will appear here.</p>
                                 </div>
                             {% endif %}
                         </div>
@@ -155,8 +155,8 @@
             {% if messages %}
                 <div class="flashes" style="position: fixed; top: 20px; right: 20px; z-index: 1000; width: 320px;">
                     {% for category, message in messages %}
-                        <div class="glass-panel alert-dismissible" style="padding: 16px; margin-bottom: 10px; border-left: 4px solid {% if category == 'error' %}var(--color-malicious){% elif category == 'success' %}var(--color-safe){% else %}var(--primary){% endif %}; display: flex; align-items: center; gap: 10px;">
-                            <i data-lucide="{% if category == 'error' %}alert-circle{% elif category == 'success' %}check-circle{% else %}info{% endif %}" style="color: {% if category == 'error' %}var(--color-malicious){% elif category == 'success' %}var(--color-safe){% else %}var(--primary){% endif %};"></i>
+                        <div class="glass-panel alert-dismissible alert-{{ category if category in ['error', 'success'] else 'info' }}" style="padding: 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                            <i data-lucide="{% if category == 'error' %}alert-circle{% elif category == 'success' %}check-circle{% else %}info{% endif %}" class="alert-icon-{{ category if category in ['error', 'success'] else 'info' }}"></i>
                             <div style="font-size: 0.9rem;">{{ message }}</div>
                         </div>
                     {% endfor %}

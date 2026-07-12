@@ -1,319 +1,688 @@
-import csv
 import os
-import time
 from datetime import datetime
-from config import Config
 
-def _read_csv(file_path):
-    """Read a CSV file and return a list of dictionaries."""
-    if not os.path.exists(file_path):
-        return []
+# Initialize Supabase Client
+supabase = None
+try:
+    from supabase import create_client, Client
+    supabase_url = os.environ.get("SUPABASE_URL", "")
+    supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+    if supabase_url and supabase_key and "your-supabase-project" not in supabase_url:
+        supabase = create_client(supabase_url, supabase_key)
+except ImportError:
+    pass
+
+def _get_user_uuid(username_or_email):
+    """Retrieve UUID for a user by email, username, or checking if it's already a UUID (caching via flask session)."""
+    if not supabase:
+        return None
+        
+    username_or_email_str = str(username_or_email).strip()
     
-    # Try reading the file with retries in case of temporary locks
-    for _ in range(5):
+    # 1. Check if the string matches UUID format directly
+    if len(username_or_email_str) == 36 and username_or_email_str.count('-') == 4:
+        return username_or_email_str
+        
+    # 2. Try Flask session cache first to eliminate duplicate DB lookups
+    try:
+        from flask import session
+        if 'user_id' in session and session.get('username') == username_or_email_str:
+            return session['user_id']
+        if 'user_id' in session and session.get('email') == username_or_email_str:
+            return session['user_id']
+    except RuntimeError:
+        pass  # Outside request context (e.g. migrate_data.py or test_pipeline.py)
+        
+    # 3. Check email lookup
+    if '@' in username_or_email_str:
         try:
-            with open(file_path, mode='r', encoding='utf-8', newline='') as f:
-                reader = csv.DictReader(f)
-                return list(reader)
-        except IOError:
-            time.sleep(0.05)
-    return []
-
-def _write_csv(file_path, fieldnames, data):
-    """Write list of dictionaries to a CSV file."""
-    for _ in range(5):
-        try:
-            with open(file_path, mode='w', encoding='utf-8', newline='') as f:
-                writer = csv.DictWriter(f, fieldnames=fieldnames)
-                writer.writeheader()
-                writer.writerows(data)
-            return True
-        except IOError:
-            time.sleep(0.05)
-    return False
-
-def _append_csv(file_path, fieldnames, row_dict):
-    """Append a dictionary row to a CSV file."""
-    for _ in range(5):
-        try:
-            file_exists = os.path.exists(file_path) and os.path.getsize(file_path) > 0
-            with open(file_path, mode='a', encoding='utf-8', newline='') as f:
-                writer = csv.DictWriter(f, fieldnames=fieldnames)
-                if not file_exists:
-                    writer.writeheader()
-                writer.writerow(row_dict)
-            return True
-        except IOError:
-            time.sleep(0.05)
-    return False
+            res = supabase.table('users').select('id').eq('email', username_or_email_str).execute()
+            if res.data:
+                uuid_val = res.data[0]['id']
+                try:
+                    from flask import session
+                    session['user_id'] = uuid_val
+                except RuntimeError:
+                    pass
+                return uuid_val
+        except Exception:
+            pass
+            
+    # 4. Check username lookup
+    try:
+        res = supabase.table('users').select('id').eq('username', username_or_email_str).execute()
+        if res.data:
+            uuid_val = res.data[0]['id']
+            try:
+                from flask import session
+                session['user_id'] = uuid_val
+            except RuntimeError:
+                pass
+            return uuid_val
+    except Exception:
+        pass
+        
+    return None
 
 # --- User Management ---
-USERS_FILE = Config.DB_FOLDER / 'users.csv'
-USER_FIELDS = ['username', 'email', 'password_hash', 'full_name', 'mobile_number', 'location', 'created_at', 'bio', 'role', 'organization', 'profile_photo_url', 'provider', 'account_created_date']
 
 def add_user(username, email, password_hash, full_name=None, mobile_number=None, location=None, role=None, organization=None, profile_photo_url=None, provider=None, account_created_date=None):
-    """Registers a new user in users.csv."""
-    users = _read_csv(USERS_FILE)
-    for user in users:
-        if user['username'].lower() == username.lower() or user['email'].lower() == email.lower():
+    """Registers a user profile record in public.users. Auth record must be provisioned beforehand or on registration."""
+    if not supabase:
+        return False, "Database not configured."
+        
+    try:
+        # Check if username or email already taken in profile table
+        existing = supabase.table('users').select('id').or_(f"username.eq.{username},email.eq.{email}").execute()
+        if existing.data:
             return False, "Username or email already exists."
+    except Exception as e:
+        print(f"Error checking existing users: {e}")
+
+    # Provision user UUID. If provider is google, we might register without password.
+    # If password_hash is provided, we register this as password credential in auth.users.
+    user_uuid = None
     
-    new_user = {
-        'username': username,
-        'email': email,
-        'password_hash': password_hash,
-        'full_name': full_name or username.title(),
-        'mobile_number': mobile_number or "",
-        'location': location or "Hyderabad, Telangana, India",
-        'created_at': datetime.now().isoformat(),
-        'bio': '',
-        'role': role or 'Threat Analyst',
-        'organization': organization or 'Malicious IP Intelligence System',
-        'profile_photo_url': profile_photo_url or '',
-        'provider': provider or 'local',
-        'account_created_date': account_created_date or datetime.now().isoformat()
-    }
-    success = _append_csv(USERS_FILE, USER_FIELDS, new_user)
-    if success:
+    # Check if username or email matches an existing UUID from a recent signup
+    user_uuid = _get_user_uuid(email) or _get_user_uuid(username)
+    
+    if not user_uuid:
+        try:
+            # Programmatically provision auth record via admin API
+            auth_user = supabase.auth.admin.create_user({
+                "email": email,
+                "password": password_hash, # Using hashed hex string as password securely
+                "email_confirm": True,
+                "user_metadata": {
+                    "username": username,
+                    "full_name": full_name or username.title()
+                }
+            })
+            user_uuid = auth_user.user.id
+        except Exception as auth_err:
+            return False, f"Auth provisioning failed: {auth_err}"
+            
+    # Insert user details in public.users
+    try:
+        supabase.table('users').insert({
+            "id": user_uuid,
+            "username": username,
+            "email": email,
+            "password_hash": password_hash,
+            "full_name": full_name or username.title(),
+            "mobile_number": mobile_number or "",
+            "location": location or "Hyderabad, Telangana, India",
+            "bio": "",
+            "role": role or 'Threat Analyst',
+            "organization": organization or 'Cyber Black Threat Intel Platform',
+            "profile_photo_url": profile_photo_url or '',
+            "provider": provider or 'local',
+            "created_at": account_created_date or datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat()
+        }).execute()
+    except Exception as e:
+        err_msg = str(e)
+        if "password_hash" in err_msg or "PGRST204" in err_msg:
+            try:
+                print("[WARNING] password_hash column not found in public.users table. Inserting profile without password_hash.")
+                supabase.table('users').insert({
+                    "id": user_uuid,
+                    "username": username,
+                    "email": email,
+                    "full_name": full_name or username.title(),
+                    "mobile_number": mobile_number or "",
+                    "location": location or "Hyderabad, Telangana, India",
+                    "bio": "",
+                    "role": role or 'Threat Analyst',
+                    "organization": organization or 'Cyber Black Threat Intel Platform',
+                    "profile_photo_url": profile_photo_url or '',
+                    "provider": provider or 'local',
+                    "created_at": account_created_date or datetime.now().isoformat(),
+                    "updated_at": datetime.now().isoformat()
+                }).execute()
+            except Exception as fallback_err:
+                return False, f"Profile insertion failed: {fallback_err}"
+        else:
+            return False, f"Profile insertion failed: {e}"
+        
+        # Initialize default settings record
+        get_settings(username)
+        
         return True, "User registered successfully."
-    return False, "Database error. Please try again."
+    except Exception as db_err:
+        return False, f"Profile insertion failed: {db_err}"
 
 def get_user(username):
     """Retrieve user details by username."""
-    users = _read_csv(USERS_FILE)
-    for user in users:
-        if user['username'].lower() == username.lower():
-            return user
+    if not supabase:
+        return None
+    try:
+        res = supabase.table('users').select('*').eq('username', username).execute()
+        if res.data:
+            user_data = res.data[0]
+            if 'password_hash' not in user_data:
+                user_data['password_hash'] = ''
+            return user_data
+    except Exception as e:
+        print(f"Error in get_user: {e}")
     return None
 
 def get_user_by_email(email):
     """Retrieve user details by email."""
-    users = _read_csv(USERS_FILE)
-    for user in users:
-        if 'email' in user and user['email'].lower() == email.lower():
-            return user
+    if not supabase:
+        return None
+    try:
+        res = supabase.table('users').select('*').eq('email', email).execute()
+        if res.data:
+            user_data = res.data[0]
+            if 'password_hash' not in user_data:
+                user_data['password_hash'] = ''
+            return user_data
+    except Exception as e:
+        print(f"Error in get_user_by_email: {e}")
     return None
 
 def update_user(current_username, full_name=None, username=None, email=None, location=None, bio=None, role=None, organization=None):
-    """Update a user record and cascade username changes through related records."""
-    users = _read_csv(USERS_FILE)
-    current_user = None
-    for user in users:
-        if user['username'].lower() == current_username.lower():
-            current_user = user
-            break
-
-    if not current_user:
+    """Update user profile record."""
+    if not supabase:
+        return False, "Database not configured."
+        
+    user_uuid = _get_user_uuid(current_username)
+    if not user_uuid:
         return False, "User not found."
-
-    target_username = username.strip() if username else current_user['username']
+        
+    target_username = username.strip() if username else current_username
     if target_username.lower() != current_username.lower():
-        for user in users:
-            if user['username'].lower() == target_username.lower():
-                return False, "Username is already taken."
-
-    for user in users:
-        if user['username'].lower() == current_username.lower():
-            user['username'] = target_username
-            user['full_name'] = full_name.strip() if full_name is not None else user.get('full_name', '')
-            user['email'] = email.strip() if email is not None else user.get('email', '')
-            user['location'] = location.strip() if location is not None else user.get('location', 'Hyderabad, Telangana, India')
-            user['bio'] = bio if bio is not None else user.get('bio', '')
-            user['role'] = role.strip() if role is not None else user.get('role', 'Threat Analyst')
-            user['organization'] = organization.strip() if organization is not None else user.get('organization', 'Malicious IP Intelligence System')
-            if 'mobile_number' not in user:
-                user['mobile_number'] = ''
-            if 'role' not in user or not user['role']:
-                user['role'] = 'Threat Analyst'
-            if 'organization' not in user or not user['organization']:
-                user['organization'] = 'Malicious IP Intelligence System'
-            if 'created_at' not in user or not user['created_at']:
-                user['created_at'] = datetime.now().isoformat()
-            break
-
-    if not _write_csv(USERS_FILE, USER_FIELDS, users):
-        return False, "Failed to update user profile."
-
-    if target_username.lower() != current_username.lower():
-        history = _read_csv(HISTORY_FILE)
-        for row in history:
-            if row.get('username', '').lower() == current_username.lower():
-                row['username'] = target_username
-        _write_csv(HISTORY_FILE, HISTORY_FIELDS, history)
-
-        watchlist = _read_csv(WATCHLIST_FILE)
-        for row in watchlist:
-            if row.get('username', '').lower() == current_username.lower():
-                row['username'] = target_username
-        _write_csv(WATCHLIST_FILE, WATCHLIST_FIELDS, watchlist)
-
-    return True, "Profile updated successfully."
+        existing = supabase.table('users').select('id').eq('username', target_username).execute()
+        if existing.data:
+            return False, "Username is already taken."
+            
+    update_data = {}
+    if full_name is not None: update_data['full_name'] = full_name.strip()
+    if username is not None: update_data['username'] = target_username
+    if email is not None: update_data['email'] = email.strip()
+    if location is not None: update_data['location'] = location.strip()
+    if bio is not None: update_data['bio'] = bio
+    if role is not None: update_data['role'] = role.strip()
+    if organization is not None: update_data['organization'] = organization.strip()
+    update_data['updated_at'] = datetime.now().isoformat()
+    
+    try:
+        supabase.table('users').update(update_data).eq('id', user_uuid).execute()
+        
+        # Sync email update with auth system if modified
+        current_email = get_user(target_username).get('email', '')
+        if email and email.strip().lower() != current_email.lower():
+            supabase.auth.admin.update_user_by_id(user_uuid, {"email": email.strip()})
+            
+        return True, "Profile updated successfully."
+    except Exception as e:
+        print(f"Error in update_user: {e}")
+        return False, f"Failed to update profile: {e}"
 
 # --- Investigation History ---
-HISTORY_FILE = Config.DB_FOLDER / 'investigation_history.csv'
-HISTORY_FIELDS = [
-    'id', 'username', 'ip', 'country', 'isp', 'asn', 'risk_score',
-    'classification', 'threat_summary', 'recommendations', 'abuse_score',
-    'vt_detections', 'date', 'source'
-]
 
-def add_history(username, ip, country, isp, asn, risk_score, classification, threat_summary, recommendations, abuse_score, vt_detections, source='manual'):
-    """Log an investigation search to database."""
-    history = _read_csv(HISTORY_FILE)
-    next_id = str(len(history) + 1)
-    
+def add_history(username, ip, country, isp, asn, risk_score, classification, threat_summary, recommendations, abuse_score, vt_detections, source='manual', duration_ms=0, sources_used='AbuseIPDB, VirusTotal, WHOIS', actions_taken='Lookup Completed', notes='', severity='Low', tags=''):
+    """Log an investigation search to Supabase."""
+    if not supabase:
+        return None
+        
+    user_uuid = _get_user_uuid(username)
+    if not user_uuid:
+        return None
+        
     new_log = {
-        'id': next_id,
-        'username': username,
+        'user_id': user_uuid,
         'ip': ip,
         'country': country or 'Unknown',
         'isp': isp or 'Unknown',
         'asn': asn or 'Unknown',
-        'risk_score': str(risk_score),
+        'risk_score': int(risk_score),
         'classification': classification,
         'threat_summary': threat_summary,
         'recommendations': recommendations,
-        'abuse_score': str(abuse_score),
-        'vt_detections': str(vt_detections),
-        'date': datetime.now().isoformat(),
-        'source': source
+        'abuse_score': int(abuse_score),
+        'vt_detections': int(vt_detections),
+        'source': source,
+        'duration_ms': int(duration_ms),
+        'sources_used': sources_used,
+        'actions_taken': actions_taken,
+        'notes': notes,
+        'severity': severity,
+        'tags': tags,
+        'created_at': datetime.now().isoformat()
     }
-    _append_csv(HISTORY_FILE, HISTORY_FIELDS, new_log)
-    return new_log
+    try:
+        res = supabase.table('investigations').insert(new_log).execute()
+        if res.data:
+            data = res.data[0]
+            data['username'] = username
+            data['date'] = data['created_at']
+            return data
+    except Exception as e:
+        err_msg = str(e)
+        if "duration_ms" in err_msg or "PGRST204" in err_msg or "notes" in err_msg:
+            print("[WARNING] V4.0 timeline columns not found in database. Retrying fallback insert.")
+            legacy_log = {k: v for k, v in new_log.items() if k not in ['duration_ms', 'sources_used', 'actions_taken', 'notes', 'severity', 'tags']}
+            try:
+                res = supabase.table('investigations').insert(legacy_log).execute()
+                if res.data:
+                    data = res.data[0]
+                    data['username'] = username
+                    data['date'] = data['created_at']
+                    return data
+            except Exception as e2:
+                print(f"Error in fallback add_history: {e2}")
+        else:
+            print(f"Error in add_history: {e}")
+    return None
 
 def get_history(username=None):
-    """Retrieve full history, optionally filtered by user."""
-    history = _read_csv(HISTORY_FILE)
-    if username:
-        return [row for row in history if row['username'].lower() == username.lower()]
-    return history
+    """Retrieve investigation history rows (including V4.0 custom metrics)."""
+    if not supabase:
+        return []
+    try:
+        if username:
+            user_uuid = _get_user_uuid(username)
+            if not user_uuid:
+                return []
+            try:
+                res = supabase.table('investigations').select('id, ip, country, isp, asn, risk_score, classification, abuse_score, vt_detections, source, created_at, duration_ms, sources_used, actions_taken, notes, severity, tags').eq('user_id', user_uuid).order('created_at', desc=True).execute()
+            except Exception as e:
+                err_msg = str(e)
+                if "duration_ms" in err_msg or "PGRST204" in err_msg or "42703" in err_msg:
+                    print("[WARNING] V4.0 timeline columns not found in database. Retrying fallback get_history select.")
+                    res = supabase.table('investigations').select('id, ip, country, isp, asn, risk_score, classification, abuse_score, vt_detections, source, created_at').eq('user_id', user_uuid).order('created_at', desc=True).execute()
+                else:
+                    raise e
+        else:
+            try:
+                res = supabase.table('investigations').select('id, ip, country, isp, asn, risk_score, classification, abuse_score, vt_detections, source, created_at, duration_ms, sources_used, actions_taken, notes, severity, tags, users(username)').order('created_at', desc=True).execute()
+            except Exception as e:
+                err_msg = str(e)
+                if "duration_ms" in err_msg or "PGRST204" in err_msg or "42703" in err_msg:
+                    print("[WARNING] V4.0 timeline columns not found in database. Retrying fallback get_history select.")
+                    res = supabase.table('investigations').select('id, ip, country, isp, asn, risk_score, classification, abuse_score, vt_detections, source, created_at, users(username)').order('created_at', desc=True).execute()
+                else:
+                    raise e
+            
+        mapped = []
+        for row in res.data:
+            row['username'] = row['users']['username'] if row.get('users') else (username or 'Unknown')
+            row['date'] = row['created_at']
+            row['risk_score'] = str(row['risk_score'])
+            row['abuse_score'] = str(row['abuse_score'])
+            row['vt_detections'] = str(row['vt_detections'])
+            # Safeguards for fallback compatibility if columns are missing in returned dict
+            row['duration_ms'] = row.get('duration_ms', 0)
+            row['sources_used'] = row.get('sources_used', 'AbuseIPDB, VirusTotal, WHOIS')
+            row['actions_taken'] = row.get('actions_taken', 'Lookup Completed')
+            row['notes'] = row.get('notes', '')
+            row['severity'] = row.get('severity', 'Low')
+            row['tags'] = row.get('tags', '')
+            mapped.append(row)
+        return mapped
+    except Exception as e:
+        print(f"Error in get_history: {e}")
+        return []
+
+def update_investigation_notes(investigation_id, username, notes, severity, tags, actions_taken=None):
+    """Update custom analyst notes, severity, and tags on an existing scan log."""
+    if not supabase:
+        return False
+    try:
+        payload = {
+            'notes': notes,
+            'severity': severity,
+            'tags': tags
+        }
+        if actions_taken:
+            payload['actions_taken'] = actions_taken
+        supabase.table('investigations').update(payload).eq('id', investigation_id).execute()
+        return True
+    except Exception as e:
+        print(f"Error in update_investigation_notes: {e}")
+        return False
+
+
 
 # --- Watchlist ---
-WATCHLIST_FILE = Config.DB_FOLDER / 'watchlist.csv'
-WATCHLIST_FIELDS = ['ip', 'username', 'risk_score', 'classification', 'date_added', 'reason', 'status']
 
 def add_to_watchlist(ip, username, risk_score, classification, reason, status='Active'):
-    """Add a target IP to watchlist."""
-    watchlist = _read_csv(WATCHLIST_FILE)
-    # Check if already in watchlist for this user
-    for row in watchlist:
-        if row['ip'] == ip and row['username'].lower() == username.lower():
-            return False, "IP is already on your watchlist."
-            
-    new_entry = {
-        'ip': ip,
-        'username': username,
-        'risk_score': str(risk_score),
-        'classification': classification,
-        'date_added': datetime.now().isoformat(),
-        'reason': reason or 'Security Analyst Review',
-        'status': status
-    }
-    success = _append_csv(WATCHLIST_FILE, WATCHLIST_FIELDS, new_entry)
-    if success:
-        return True, "IP added to watchlist."
-    return False, "Failed to update watchlist."
-
-def remove_from_watchlist(ip, username):
-    """Delete an IP from watchlist for a user."""
-    watchlist = _read_csv(WATCHLIST_FILE)
-    new_watchlist = [row for row in watchlist if not (row['ip'] == ip and row['username'].lower() == username.lower())]
-    if len(watchlist) == len(new_watchlist):
-        return False, "IP not found in watchlist."
-    
-    success = _write_csv(WATCHLIST_FILE, WATCHLIST_FIELDS, new_watchlist)
-    if success:
-        return True, "IP removed from watchlist."
-    return False, "Failed to update database."
-
-def get_watchlist(username=None):
-    """Retrieve watchlist rows."""
-    watchlist = _read_csv(WATCHLIST_FILE)
-    if username:
-        return [row for row in watchlist if row['username'].lower() == username.lower()]
-    return watchlist
-
-def is_in_watchlist(ip, username):
-    """Check if IP is active in user's watchlist."""
-    watchlist = _read_csv(WATCHLIST_FILE)
-    return any(row['ip'] == ip and row['username'].lower() == username.lower() for row in watchlist)
-
-# --- Malicious IPs Cache ---
-MALICIOUS_FILE = Config.DB_FOLDER / 'malicious_ips.csv'
-MALICIOUS_FIELDS = ['ip', 'risk_score', 'classification', 'last_detected', 'reason']
-
-def add_malicious_ip(ip, risk_score, classification, reason):
-    """Update general list of detected malicious IPs."""
-    malicious = _read_csv(MALICIOUS_FILE)
-    # Check if already present and update, or append
-    found = False
-    for row in malicious:
-        if row['ip'] == ip:
-            row['risk_score'] = str(risk_score)
-            row['classification'] = classification
-            row['last_detected'] = datetime.now().isoformat()
-            row['reason'] = reason
-            found = True
-            break
-            
-    if found:
-        _write_csv(MALICIOUS_FILE, MALICIOUS_FIELDS, malicious)
-    else:
-        new_row = {
-            'ip': ip,
-            'risk_score': str(risk_score),
-            'classification': classification,
-            'last_detected': datetime.now().isoformat(),
-            'reason': reason
-        }
-        _append_csv(MALICIOUS_FILE, MALICIOUS_FIELDS, new_row)
-    return True
-
-def get_malicious_ips():
-    """Retrieve the general cache of malicious IPs."""
-    return _read_csv(MALICIOUS_FILE)
-
-def _migrate_users_schema():
-    """Auto-migrate users.csv schema if columns are missing."""
-    if not os.path.exists(USERS_FILE):
-        return
+    """Add target IP to watchlist."""
+    if not supabase:
+        return False, "Database not configured."
+        
+    user_uuid = _get_user_uuid(username)
+    if not user_uuid:
+        return False, "User not found."
         
     try:
-        users = _read_csv(USERS_FILE)
-        if not users:
-            return
+        existing = supabase.table('watchlists').select('id').eq('user_id', user_uuid).eq('ip', ip).execute()
+        if existing.data:
+            return False, "IP is already on your watchlist."
             
-        needs_migration = False
-        sample_columns = users[0].keys()
-        checked_cols = ['full_name', 'mobile_number', 'location', 'created_at', 'profile_photo_url', 'provider', 'account_created_date']
-        for col in checked_cols:
-            if col not in sample_columns:
-                needs_migration = True
-                break
-            
-        if needs_migration:
-            print("[*] Migrating database: upgrading users.csv schema...")
-            for user in users:
-                if 'full_name' not in user or not user.get('full_name'):
-                    user['full_name'] = user.get('username', '').title() or 'Security Analyst'
-                if 'mobile_number' not in user:
-                    user['mobile_number'] = ""
-                if 'location' not in user or not user.get('location'):
-                    user['location'] = "Hyderabad, Telangana, India"
-                if 'created_at' not in user or not user.get('created_at'):
-                    user['created_at'] = datetime.now().isoformat()
-                if 'profile_photo_url' not in user:
-                    user['profile_photo_url'] = ""
-                if 'provider' not in user or not user.get('provider'):
-                    user['provider'] = "local"
-                if 'account_created_date' not in user or not user.get('account_created_date'):
-                    user['account_created_date'] = user.get('created_at') or datetime.now().isoformat()
-            
-            # Rewrite database file with new columns
-            _write_csv(USERS_FILE, USER_FIELDS, users)
-            print("[+] Database migration completed successfully.")
+        new_entry = {
+            'user_id': user_uuid,
+            'ip': ip,
+            'risk_score': int(risk_score),
+            'classification': classification,
+            'reason': reason or 'Security Analyst Review',
+            'status': status,
+            'created_at': datetime.now().isoformat()
+        }
+        supabase.table('watchlists').insert(new_entry).execute()
+        return True, "IP added to watchlist."
     except Exception as e:
-        print(f"[-] Database migration error: {e}")
+        print(f"Error in add_to_watchlist: {e}")
+        return False, f"Failed to update watchlist: {e}"
 
-# Run schema migrations automatically on import
-_migrate_users_schema()
+def remove_from_watchlist(ip, username):
+    """Delete IP from watchlist for a user."""
+    if not supabase:
+        return False, "Database not configured."
+        
+    user_uuid = _get_user_uuid(username)
+    if not user_uuid:
+        return False, "User not found."
+        
+    try:
+        res = supabase.table('watchlists').delete().eq('user_id', user_uuid).eq('ip', ip).execute()
+        if res.data:
+            return True, "IP removed from watchlist."
+        return False, "IP not found in watchlist."
+    except Exception as e:
+        print(f"Error in remove_from_watchlist: {e}")
+        return False, f"Failed to delete from watchlist: {e}"
+
+def get_watchlist(username=None):
+    """Retrieve watchlist rows (restricted select columns)."""
+    if not supabase:
+        return []
+    try:
+        if username:
+            user_uuid = _get_user_uuid(username)
+            if not user_uuid:
+                return []
+            res = supabase.table('watchlists').select('ip, risk_score, classification, reason, status, created_at').eq('user_id', user_uuid).order('created_at', desc=True).execute()
+        else:
+            res = supabase.table('watchlists').select('ip, risk_score, classification, reason, status, created_at, users(username)').order('created_at', desc=True).execute()
+            
+        mapped = []
+        for row in res.data:
+            row['username'] = row['users']['username'] if row.get('users') else (username or 'Unknown')
+            row['date_added'] = row['created_at']
+            row['risk_score'] = str(row['risk_score'])
+            mapped.append(row)
+        return mapped
+    except Exception as e:
+        print(f"Error in get_watchlist: {e}")
+        return []
+
+def is_in_watchlist(ip, username):
+    """Check if IP is active in user watchlist."""
+    if not supabase:
+        return False
+    user_uuid = _get_user_uuid(username)
+    if not user_uuid:
+        return False
+    try:
+        res = supabase.table('watchlists').select('id').eq('user_id', user_uuid).eq('ip', ip).execute()
+        return bool(res.data)
+    except Exception as e:
+        print(f"Error in is_in_watchlist: {e}")
+        return False
+
+# --- Malicious IPs Cache ---
+
+def add_malicious_ip(ip, risk_score, classification, reason):
+    """Update list of detected malicious IPs."""
+    if not supabase:
+        return False
+    try:
+        new_row = {
+            'ip': ip,
+            'risk_score': int(risk_score),
+            'classification': classification,
+            'reason': reason,
+            'last_detected': datetime.now().isoformat()
+        }
+        supabase.table('threat_reports').upsert(new_row, on_conflict='ip').execute()
+        return True
+    except Exception as e:
+        print(f"Error in add_malicious_ip: {e}")
+        return False
+
+def get_malicious_ips():
+    """Retrieve cache of malicious IPs."""
+    if not supabase:
+        return []
+    try:
+        res = supabase.table('threat_reports').select('*').order('last_detected', desc=True).execute()
+        mapped = []
+        for row in res.data:
+            row['risk_score'] = str(row['risk_score'])
+            mapped.append(row)
+        return mapped
+    except Exception as e:
+        print(f"Error in get_malicious_ips: {e}")
+        return []
+
+# --- Application Settings ---
+
+def get_settings(username):
+    """Get persisted settings configuration for user (caching via flask session)."""
+    if not supabase:
+        return {}
+        
+    # Check Flask session cache first to avoid DB query
+    try:
+        from flask import session
+        if 'settings' in session and session.get('username') == username:
+            return session['settings']
+    except RuntimeError:
+        pass
+        
+    user_uuid = _get_user_uuid(username)
+    if not user_uuid:
+        return {}
+    try:
+        res = supabase.table('app_settings').select('*').eq('user_id', user_uuid).execute()
+        if res.data:
+            settings_dict = res.data[0]
+            try:
+                from flask import session
+                session['settings'] = settings_dict
+            except RuntimeError:
+                pass
+            return settings_dict
+        else:
+            default_settings = {
+                "user_id": user_uuid,
+                "timezone": "Local",
+                "auto_refresh": "5",
+                "email_alerts": False,
+                "desktop_notifications": False,
+                "report_header": "Cyber Black Threat Audit Summary",
+                "include_whois": True,
+                "export_format": "csv",
+                "session_timeout": "4",
+                "auto_watchlist_score": 75,
+                "mock_mode": False,
+                "abuseipdb_key": "",
+                "virustotal_key": ""
+            }
+            supabase.table('app_settings').insert(default_settings).execute()
+            try:
+                from flask import session
+                session['settings'] = default_settings
+            except RuntimeError:
+                pass
+            return default_settings
+    except Exception as e:
+        print(f"Error in get_settings: {e}")
+        return {}
+
+def save_settings(username, settings_dict):
+    """Update settings configurations (synchronizing flask session)."""
+    if not supabase:
+        return False
+    user_uuid = _get_user_uuid(username)
+    if not user_uuid:
+        return False
+    try:
+        payload = dict(settings_dict)
+        payload.pop('user_id', None)
+        payload['updated_at'] = datetime.now().isoformat()
+        supabase.table('app_settings').update(payload).eq('user_id', user_uuid).execute()
+        
+        # Sync Flask session cache
+        try:
+            from flask import session
+            payload['user_id'] = user_uuid
+            session['settings'] = payload
+        except RuntimeError:
+            pass
+        return True
+    except Exception as e:
+        print(f"Error in save_settings: {e}")
+        return False
+
+# --- User Notifications ---
+
+def get_notifications(username):
+    """Get notification alerts queue for user (caching via flask session)."""
+    if not supabase:
+        return []
+        
+    # Check Flask session cache first
+    try:
+        from flask import session
+        if 'notifications_cached' in session and session.get('username') == username:
+            return session['notifications_cached']
+    except RuntimeError:
+        pass
+        
+    user_uuid = _get_user_uuid(username)
+    if not user_uuid:
+        return []
+    try:
+        res = supabase.table('notifications').select('icon, color, title, message, created_at').eq('user_id', user_uuid).order('created_at', desc=True).execute()
+        
+        # Populate session cache
+        try:
+            from flask import session
+            session['notifications_cached'] = res.data
+        except RuntimeError:
+            pass
+        return res.data
+    except Exception as e:
+        print(f"Error in get_notifications: {e}")
+        return []
+
+def add_notification(username, icon, color, title, message):
+    """Enqueue alert notification (synchronizing session cache)."""
+    if not supabase:
+        return False
+    user_uuid = _get_user_uuid(username)
+    if not user_uuid:
+        return False
+    try:
+        new_notif = {
+            'user_id': user_uuid,
+            'icon': icon,
+            'color': color,
+            'title': title,
+            'message': message,
+            'created_at': datetime.now().isoformat()
+        }
+        supabase.table('notifications').insert(new_notif).execute()
+        
+        # Sync Flask session cache
+        try:
+            from flask import session
+            if 'notifications_cached' not in session:
+                session['notifications_cached'] = []
+            cached = list(session['notifications_cached'])
+            cached.insert(0, {
+                'icon': icon,
+                'color': color,
+                'title': title,
+                'message': message,
+                'created_at': new_notif['created_at']
+            })
+            session['notifications_cached'] = cached[:20]
+        except RuntimeError:
+            pass
+        return True
+    except Exception as e:
+        print(f"Error in add_notification: {e}")
+        return False
+
+def clear_notifications(username):
+    """Clear all alert records for user (synchronizing session cache)."""
+    if not supabase:
+        return False
+    user_uuid = _get_user_uuid(username)
+    if not user_uuid:
+        return False
+    try:
+        supabase.table('notifications').delete().eq('user_id', user_uuid).execute()
+        
+        # Sync Flask session cache
+        try:
+            from flask import session
+            session['notifications_cached'] = []
+        except RuntimeError:
+            pass
+        return True
+    except Exception as e:
+        print(f"Error in clear_notifications: {e}")
+        return False
+
+def update_investigation_source(username, ip, old_source, new_source):
+    """Update investigation log source (replaces legacy CSV batch save)."""
+    if not supabase:
+        return False
+    user_uuid = _get_user_uuid(username)
+    if not user_uuid:
+        return False
+    try:
+        supabase.table('investigations').update({'source': new_source}).eq('user_id', user_uuid).eq('ip', ip).eq('source', old_source).execute()
+        return True
+    except Exception as e:
+        print(f"Error in update_investigation_source: {e}")
+        return False
+
+# --- Activity Logger ---
+
+def add_activity_log(username, action, details):
+    """Log audits to PostgreSQL."""
+    # Note: Not active by default in frontend workflow, prepared for security extensions
+    if not supabase:
+        return False
+    user_uuid = _get_user_uuid(username)
+    if not user_uuid:
+        return False
+    try:
+        log_entry = {
+            'user_id': user_uuid,
+            'action': action,
+            'details': details,
+            'created_at': datetime.now().isoformat()
+        }
+        # In case activity_logs table was not setup, catch connection error gracefully
+        supabase.table('activity_logs').insert(log_entry).execute()
+        return True
+    except Exception:
+        return False
+
+# Verify Supabase connection on module import
+if supabase:
+    try:
+        supabase.table('users').select('id').limit(1).execute()
+        print("[+] Supabase connection verified successfully.")
+    except Exception as e:
+        print(f"[WARNING] Supabase database tables might not be deployed yet: {e}")
+else:
+    print("[WARNING] Supabase environment variables are missing or incorrect.")

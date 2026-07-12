@@ -1,8 +1,8 @@
 {% extends "base_auth.html" %}
 
-{% block title %}Dashboard - Malicious IP Intelligence System{% endblock %}
-{% block page_title %}Threat Intelligence Dashboard{% endblock %}
-{% block page_subtitle %}Real-time security telemetry, recent activity logs, and metric distribution overview{% endblock %}
+{% block title %}Dashboard - Cyber Black Threat Intel Platform{% endblock %}
+{% block page_title %}Threat Intel Dashboard{% endblock %}
+{% block page_subtitle %}Real-time security telemetry, active threat levels, and analytical metrics distribution{% endblock %}
 
 {% block page_actions %}
 <a href="{{ url_for('ip_investigation') }}" class="btn btn-primary">
@@ -11,88 +11,189 @@
 {% endblock %}
 
 {% block auth_content %}
-<!-- Dashboard metric widgets -->
-<div class="widget-grid">
-    <div class="glass-panel metric-card primary animate-fade">
-        <div class="metric-header">
-            <span class="metric-title">Total Scans</span>
-            <i data-lucide="terminal" class="metric-icon"></i>
+<!-- Dashboard metric widgets (8 SOC metrics) -->
+<div class="widget-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div class="glass-panel metric-card primary animate-fade" style="padding: 16px; border-left: 4px solid var(--primary);">
+        <div class="metric-header" style="display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); margin-bottom: 8px;">
+            <span class="metric-title" style="font-size: 0.85rem; font-weight: 500;">Total Investigations</span>
+            <i data-lucide="terminal" class="metric-icon" style="width: 18px; height: 18px; color: var(--primary);"></i>
         </div>
-        <div class="metric-value">{{ stats.total_scans }}</div>
+        <div class="metric-value" style="font-size: 1.8rem; font-weight: 700; color: var(--text-primary);">{{ stats.total_scans }}</div>
     </div>
     
-    <div class="glass-panel metric-card safe animate-fade">
-        <div class="metric-header">
-            <span class="metric-title">Safe IPs</span>
-            <i data-lucide="shield-check" class="metric-icon"></i>
+    <div class="glass-panel metric-card safe animate-fade" style="padding: 16px; border-left: 4px solid var(--color-safe);">
+        <div class="metric-header" style="display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); margin-bottom: 8px;">
+            <span class="metric-title" style="font-size: 0.85rem; font-weight: 500;">Safe IPs</span>
+            <i data-lucide="shield-check" class="metric-icon" style="width: 18px; height: 18px; color: var(--color-safe);"></i>
         </div>
-        <div class="metric-value">{{ stats.safe_scans }}</div>
-    </div>
-    
-    <div class="glass-panel metric-card suspicious animate-fade">
-        <div class="metric-header">
-            <span class="metric-title">Suspicious IPs</span>
-            <i data-lucide="alert-triangle" class="metric-icon"></i>
-        </div>
-        <div class="metric-value">{{ stats.suspicious_scans }}</div>
-    </div>
-    
-    <div class="glass-panel metric-card malicious animate-fade">
-        <div class="metric-header">
-            <span class="metric-title">Malicious IPs</span>
-            <i data-lucide="skull" class="metric-icon"></i>
-        </div>
-        <div class="metric-value">{{ stats.malicious_scans }}</div>
-    </div>
-    
-    <div class="glass-panel metric-card primary animate-fade">
-        <div class="metric-header">
-            <span class="metric-title">Reports Generated</span>
-            <i data-lucide="file-text" class="metric-icon"></i>
-        </div>
-        <div class="metric-value">{{ stats.total_reports }}</div>
+        <div class="metric-value" style="font-size: 1.8rem; font-weight: 700; color: var(--color-safe);">{{ stats.safe_scans }}</div>
     </div>
 
-    <div class="glass-panel metric-card suspicious animate-fade">
-        <div class="metric-header">
-            <span class="metric-title">Watchlist IPs</span>
-            <i data-lucide="eye" class="metric-icon"></i>
+    <div class="glass-panel metric-card safe animate-fade" style="padding: 16px; border-left: 4px solid #00e676;">
+        <div class="metric-header" style="display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); margin-bottom: 8px;">
+            <span class="metric-title" style="font-size: 0.85rem; font-weight: 500;">Low Risk IPs</span>
+            <i data-lucide="shield" class="metric-icon" style="width: 18px; height: 18px; color: #00e676;"></i>
         </div>
-        <div class="metric-value">{{ stats.watchlist_count }}</div>
+        <div class="metric-value" style="font-size: 1.8rem; font-weight: 700; color: #00e676;">{{ stats.low_risk_scans }}</div>
+    </div>
+    
+    <div class="glass-panel metric-card suspicious animate-fade" style="padding: 16px; border-left: 4px solid var(--color-suspicious);">
+        <div class="metric-header" style="display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); margin-bottom: 8px;">
+            <span class="metric-title" style="font-size: 0.85rem; font-weight: 500;">Suspicious IPs</span>
+            <i data-lucide="alert-triangle" class="metric-icon" style="width: 18px; height: 18px; color: var(--color-suspicious);"></i>
+        </div>
+        <div class="metric-value" style="font-size: 1.8rem; font-weight: 700; color: var(--color-suspicious);">{{ stats.suspicious_scans }}</div>
+    </div>
+
+    <div class="glass-panel metric-card suspicious animate-fade" style="padding: 16px; border-left: 4px solid #ff9100;">
+        <div class="metric-header" style="display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); margin-bottom: 8px;">
+            <span class="metric-title" style="font-size: 0.85rem; font-weight: 500;">High Risk IPs</span>
+            <i data-lucide="alert-circle" class="metric-icon" style="width: 18px; height: 18px; color: #ff9100;"></i>
+        </div>
+        <div class="metric-value" style="font-size: 1.8rem; font-weight: 700; color: #ff9100;">{{ stats.high_risk_scans }}</div>
+    </div>
+    
+    <div class="glass-panel metric-card malicious animate-fade" style="padding: 16px; border-left: 4px solid var(--color-malicious);">
+        <div class="metric-header" style="display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); margin-bottom: 8px;">
+            <span class="metric-title" style="font-size: 0.85rem; font-weight: 500;">Malicious IPs</span>
+            <i data-lucide="skull" class="metric-icon" style="width: 18px; height: 18px; color: var(--color-malicious);"></i>
+        </div>
+        <div class="metric-value" style="font-size: 1.8rem; font-weight: 700; color: var(--color-malicious);">{{ stats.malicious_scans }}</div>
+    </div>
+
+    <div class="glass-panel metric-card primary animate-fade" style="padding: 16px; border-left: 4px solid var(--accent-cyan);">
+        <div class="metric-header" style="display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); margin-bottom: 8px;">
+            <span class="metric-title" style="font-size: 0.85rem; font-weight: 500;">Today's Scans</span>
+            <i data-lucide="clock" class="metric-icon" style="width: 18px; height: 18px; color: var(--accent-cyan);"></i>
+        </div>
+        <div class="metric-value" style="font-size: 1.8rem; font-weight: 700; color: var(--accent-cyan);">{{ stats.todays_scans }}</div>
+    </div>
+
+    <div class="glass-panel metric-card primary animate-fade" style="padding: 16px; border-left: 4px solid var(--color-safe);">
+        <div class="metric-header" style="display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); margin-bottom: 8px;">
+            <span class="metric-title" style="font-size: 0.85rem; font-weight: 500;">Watchlist Active</span>
+            <i data-lucide="eye" class="metric-icon" style="width: 18px; height: 18px; color: var(--color-safe);"></i>
+        </div>
+        <div class="metric-value" style="font-size: 1.8rem; font-weight: 700; color: var(--color-safe);">{{ stats.watchlist_count }}</div>
     </div>
 </div>
 
-<!-- Visual charts grid -->
-<div class="charts-grid">
-    <!-- Trend Graph -->
-    <div class="glass-panel chart-card">
-        <h3 class="chart-title">
+<!-- Visual Charts Grid (6 charts) -->
+<div class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 24px;">
+    <!-- 1. Trend Graph -->
+    <div class="glass-panel chart-card" style="padding: 20px;">
+        <h3 class="chart-title" style="margin-top: 0; display: flex; align-items: center; gap: 8px;">
             <i data-lucide="activity" style="color: var(--primary);"></i>
             Investigation Frequency (Last 7 Days)
         </h3>
-        <div class="chart-wrapper">
+        <div class="chart-wrapper" style="position: relative; height: 260px;">
             <canvas id="investigationTrendsChart"></canvas>
         </div>
     </div>
     
-    <!-- Distribution Doughnut -->
-    <div class="glass-panel chart-card">
-        <h3 class="chart-title">
+    <!-- 2. Risk Distribution -->
+    <div class="glass-panel chart-card" style="padding: 20px;">
+        <h3 class="chart-title" style="margin-top: 0; display: flex; align-items: center; gap: 8px;">
             <i data-lucide="pie-chart" style="color: var(--accent-indigo);"></i>
-            Threat Distribution
+            Risk Profile Distribution
         </h3>
-        <div class="chart-wrapper">
-            <canvas id="threatDistributionChart"></canvas>
+        <div class="chart-wrapper" style="position: relative; height: 260px;">
+            <canvas id="riskDistributionChart"></canvas>
+        </div>
+    </div>
+
+    <!-- 3. Threat Ingestion Sources -->
+    <div class="glass-panel chart-card" style="padding: 20px;">
+        <h3 class="chart-title" style="margin-top: 0; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="shield-alert" style="color: var(--color-malicious);"></i>
+            Threat Ingestion Channels
+        </h3>
+        <div class="chart-wrapper" style="position: relative; height: 260px;">
+            <canvas id="threatSourcesChart"></canvas>
+        </div>
+    </div>
+
+    <!-- 4. Country Threat Distribution -->
+    <div class="glass-panel chart-card" style="padding: 20px;">
+        <h3 class="chart-title" style="margin-top: 0; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="globe" style="color: var(--accent-cyan);"></i>
+            Top Threat Countries
+        </h3>
+        <div class="chart-wrapper" style="position: relative; height: 260px;">
+            <canvas id="countryDistributionChart"></canvas>
+        </div>
+    </div>
+
+    <!-- 5. Top Investigated IPs -->
+    <div class="glass-panel chart-card" style="padding: 20px;">
+        <h3 class="chart-title" style="margin-top: 0; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="list" style="color: var(--primary);"></i>
+            Top Investigated IP Nodes
+        </h3>
+        <div class="chart-wrapper" style="position: relative; height: 260px;">
+            <canvas id="topIpsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- 6. Watchlist size growth -->
+    <div class="glass-panel chart-card" style="padding: 20px;">
+        <h3 class="chart-title" style="margin-top: 0; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="line-chart" style="color: var(--color-safe);"></i>
+            Watchlist Size Growth
+        </h3>
+        <div class="chart-wrapper" style="position: relative; height: 260px;">
+            <canvas id="watchlistGrowthChart"></canvas>
         </div>
     </div>
 </div>
 
-<!-- Recent Activity Logging Grid -->
+<!-- Top lists for threat intelligence context (Countries & ASNs) -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px; margin-bottom: 24px;">
+    <!-- Top Threat Countries Panel -->
+    <div class="glass-panel" style="padding: 20px;">
+        <h3 class="chart-title" style="margin-top: 0; display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+            <i data-lucide="flag" style="color: var(--accent-indigo);"></i>
+            Top Threat Source Countries
+        </h3>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+            {% for country, count in stats.top_countries %}
+            <li style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <span style="font-weight: 500;">{{ country }}</span>
+                <span class="badge badge-suspicious">{{ count }} Flagged Scans</span>
+            </li>
+            {% else %}
+            <li style="color: var(--text-secondary); text-align: center; padding: 24px 0;">No threat country logs collected yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Top Threat ASNs Panel -->
+    <div class="glass-panel" style="padding: 20px;">
+        <h3 class="chart-title" style="margin-top: 0; display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+            <i data-lucide="network" style="color: var(--accent-cyan);"></i>
+            Top Threat ASNs / ISPs
+        </h3>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+            {% for asn, count in stats.top_asns %}
+            <li style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <span style="font-size: 0.85rem; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono);">
+                    {{ asn }}
+                </span>
+                <span class="badge badge-malicious">{{ count }} Flagged Scans</span>
+            </li>
+            {% else %}
+            <li style="color: var(--text-secondary); text-align: center; padding: 24px 0;">No threat ASN logs collected yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<!-- Recent Activity Logging Grid (Supports 5 risk classes) -->
 <div class="glass-panel" style="padding: 24px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h3 class="chart-title" style="margin-bottom: 0;">
             <i data-lucide="list-collapse" style="color: var(--primary);"></i>
-            Recent Activity Logs
+            Recent Investigations
         </h3>
         <a href="{{ url_for('history') }}" style="color: var(--primary); font-size: 0.85rem; text-decoration: none;">View Complete History →</a>
     </div>
@@ -103,10 +204,10 @@
                 <tr>
                     <th>Timestamp</th>
                     <th>IP Target</th>
-                    <th>Region</th>
                     <th>ISP Infrastructure</th>
                     <th>Risk Score</th>
                     <th>Classification</th>
+                    <th>Actions Taken</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -118,22 +219,24 @@
                                 {{ row.date.split('T')[0] }} {{ row.date.split('T')[1][:5] if 'T' in row.date else '' }}
                             </td>
                             <td style="font-family: var(--font-mono); font-weight: 600;">{{ row.ip }}</td>
-                            <td>{{ row.country }}</td>
                             <td style="font-size: 0.85rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                {{ row.isp }}
+                                {{ row.isp }} ({{ row.country }})
                             </td>
                             <td>
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <div style="width: 60px; background: rgba(255,255,255,0.05); height: 6px; border-radius: 3px; overflow: hidden;">
-                                        <div style="width: {{ row.risk_score }}%; height: 100%; background: {% if row.classification == 'Safe' %}var(--color-safe){% elif row.classification == 'Suspicious' %}var(--color-suspicious){% else %}var(--color-malicious){% endif %};"></div>
+                                        <div class="risk-fill-{{ row.classification.lower().replace(' ', '-') }} dynamic-risk-bar" data-risk-score="{{ row.risk_score }}" style="height: 100%;"></div>
                                     </div>
                                     <span style="font-family: var(--font-mono); font-size: 0.8rem;">{{ row.risk_score }}/100</span>
                                 </div>
                             </td>
                             <td>
-                                <span class="badge {% if row.classification == 'Safe' %}badge-safe{% elif row.classification == 'Suspicious' %}badge-suspicious{% else %}badge-malicious{% endif %}">
+                                <span class="badge badge-{{ row.classification.lower().replace(' ', '-') }}">
                                     {{ row.classification }}
                                 </span>
+                            </td>
+                            <td style="font-size: 0.85rem; color: var(--text-secondary);">
+                                {{ row.actions_taken or 'Lookup Completed' }}
                             </td>
                             <td>
                                 <a href="{{ url_for('investigation_results', ip_address=row.ip) }}" class="btn btn-outline-primary" style="padding: 6px 12px; font-size: 0.8rem;">
@@ -153,21 +256,255 @@
         </table>
     </div>
 </div>
+
+<!-- AI Dashboard Insights (V5.0) -->
+<div class="glass-panel" id="ai-insights-panel" style="padding: 24px; margin-top: 8px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <h3 class="chart-title" style="margin: 0; display: flex; align-items: center; gap: 10px;">
+            <span style="background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 7px; padding: 5px 7px; display: flex;">
+                <i data-lucide="brain-circuit" style="width: 16px; height: 16px; color: white;"></i>
+            </span>
+            AI SOC Intelligence Insights
+            <span style="font-size: 0.62rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 2px 7px; border-radius: 20px;">V5.0</span>
+        </h3>
+        <span id="ai-insight-status" style="font-size: 0.72rem; color: var(--text-muted);">Loading…</span>
+    </div>
+    <div id="ai-insights-content" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+        <!-- Skeleton loaders -->
+        <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 16px;">
+            <div style="height: 12px; background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; animation: shimmer 1.4s infinite; border-radius: 4px; margin-bottom: 8px; width: 90%;"></div>
+            <div style="height: 12px; background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; animation: shimmer 1.4s infinite; border-radius: 4px; width: 70%;"></div>
+        </div>
+        <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 16px;">
+            <div style="height: 12px; background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; animation: shimmer 1.4s infinite; border-radius: 4px; margin-bottom: 8px; width: 85%;"></div>
+            <div style="height: 12px; background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; animation: shimmer 1.4s infinite; border-radius: 4px; width: 60%;"></div>
+        </div>
+    </div>
+    <div style="margin-top: 12px; font-size: 0.72rem; color: var(--text-muted); font-style: italic; display: flex; align-items: center; gap: 6px;">
+        <i data-lucide="info" style="width: 11px; height: 11px;"></i>
+    </div>
+</div>
+
+<div id="dashboard-config"
+     data-trend-labels='{{ trend_labels | tojson }}'
+     data-trend-counts='{{ trend_counts | tojson }}'
+     data-stats-safe="{{ stats.safe_scans }}"
+     data-stats-low-risk="{{ stats.low_risk_scans }}"
+     data-stats-suspicious="{{ stats.suspicious_scans }}"
+     data-stats-high-risk="{{ stats.high_risk_scans }}"
+     data-stats-malicious="{{ stats.malicious_scans }}"
+     data-source-distribution='{{ source_distribution | tojson }}'
+     data-top-countries='{{ stats.top_countries | tojson }}'
+     data-top-ips='{{ top_investigated_ips | tojson }}'
+     data-watchlist-labels='{{ watchlist_labels | tojson }}'
+     data-watchlist-counts='{{ watchlist_counts | tojson }}'
+     style="display: none;"></div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // Ingress chart datasets from backend Jinja rendering
-    window.threatDistributionData = {
-        safe: {{ stats.safe_scans }},
-        suspicious: {{ stats.suspicious_scans }},
-        malicious: {{ stats.malicious_scans }}
-    };
+    // Safe ChartJS rendering script
+    document.addEventListener("DOMContentLoaded", function() {
+        const themeColor = '#00bcff'; // CBTIP Cyan
+        const configEl = document.getElementById('dashboard-config');
+        
+        if (!configEl) return;
+        
+        const trendLabels = JSON.parse(configEl.getAttribute('data-trend-labels') || '[]');
+        const trendCounts = JSON.parse(configEl.getAttribute('data-trend-counts') || '[]');
+        const statsSafe = parseInt(configEl.getAttribute('data-stats-safe') || '0', 10);
+        const statsLowRisk = parseInt(configEl.getAttribute('data-stats-low-risk') || '0', 10);
+        const statsSuspicious = parseInt(configEl.getAttribute('data-stats-suspicious') || '0', 10);
+        const statsHighRisk = parseInt(configEl.getAttribute('data-stats-high-risk') || '0', 10);
+        const statsMalicious = parseInt(configEl.getAttribute('data-stats-malicious') || '0', 10);
+        const sourceDistribution = JSON.parse(configEl.getAttribute('data-source-distribution') || '[]');
+        const topCountries = JSON.parse(configEl.getAttribute('data-top-countries') || '[]');
+        const topIps = JSON.parse(configEl.getAttribute('data-top-ips') || '[]');
+        const watchlistLabels = JSON.parse(configEl.getAttribute('data-watchlist-labels') || '[]');
+        const watchlistCounts = JSON.parse(configEl.getAttribute('data-watchlist-counts') || '[]');
 
-    window.trendData = {
-        labels: {{ trend_labels | tojson }},
-        counts: {{ trend_counts | tojson }}
-    };
+        // 1. Investigation Trends (Line)
+        const ctxTrends = document.getElementById('investigationTrendsChart').getContext('2d');
+        new Chart(ctxTrends, {
+            type: 'line',
+            data: {
+                labels: trendLabels,
+                datasets: [{
+                    label: 'Scans',
+                    data: trendCounts,
+                    borderColor: themeColor,
+                    backgroundColor: 'rgba(0, 188, 255, 0.05)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#888' } },
+                    y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#888', stepSize: 1 } }
+                }
+            }
+        });
+
+        // 2. Risk Profile Distribution (Doughnut)
+        const ctxRisk = document.getElementById('riskDistributionChart').getContext('2d');
+        new Chart(ctxRisk, {
+            type: 'doughnut',
+            data: {
+                labels: ['Safe', 'Low Risk', 'Suspicious', 'High Risk', 'Malicious'],
+                datasets: [{
+                    data: [
+                        statsSafe,
+                        statsLowRisk,
+                        statsSuspicious,
+                        statsHighRisk,
+                        statsMalicious
+                    ],
+                    backgroundColor: ['#28a745', '#00e676', '#ffc107', '#ff9100', '#dc3545'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right', labels: { color: '#ccc', boxWidth: 12 } } }
+            }
+        });
+
+        // 3. Threat Ingestion Sources (Bar)
+        const ctxSources = document.getElementById('threatSourcesChart').getContext('2d');
+        new Chart(ctxSources, {
+            type: 'bar',
+            data: {
+                labels: sourceDistribution.map(d => d[0]),
+                datasets: [{
+                    data: sourceDistribution.map(d => d[1]),
+                    backgroundColor: 'rgba(0, 188, 255, 0.6)',
+                    borderColor: themeColor,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#888' } },
+                    y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#888', stepSize: 1 } }
+                }
+            }
+        });
+
+        // 4. Country Threat Distribution (Pie)
+        const ctxCountry = document.getElementById('countryDistributionChart').getContext('2d');
+        new Chart(ctxCountry, {
+            type: 'pie',
+            data: {
+                labels: topCountries.map(d => d[0]),
+                datasets: [{
+                    data: topCountries.map(d => d[1]),
+                    backgroundColor: ['#ff8800', '#33b5e5', '#2bbbad', '#aa66cc', '#cc0000'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right', labels: { color: '#ccc', boxWidth: 12 } } }
+            }
+        });
+
+        // 5. Top Investigated IPs (Horizontal Bar)
+        const ctxIps = document.getElementById('topIpsChart').getContext('2d');
+        new Chart(ctxIps, {
+            type: 'bar',
+            data: {
+                labels: topIps.map(d => d[0]),
+                datasets: [{
+                    data: topIps.map(d => d[1]),
+                    backgroundColor: 'rgba(156, 39, 176, 0.6)',
+                    borderColor: '#9c27b0',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#888', stepSize: 1 } },
+                    y: { grid: { display: false }, ticks: { color: '#888' } }
+                }
+            }
+        });
+
+        // 6. Watchlist Growth Chart (Line)
+        const ctxWl = document.getElementById('watchlistGrowthChart').getContext('2d');
+        new Chart(ctxWl, {
+            type: 'line',
+            data: {
+                labels: watchlistLabels,
+                datasets: [{
+                    label: 'Size',
+                    data: watchlistCounts,
+                    borderColor: '#00e676',
+                    backgroundColor: 'rgba(0, 230, 118, 0.05)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#888' } },
+                    y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#888', stepSize: 1 } }
+                }
+            }
+        });
+    });
+
+    // ── AI Dashboard Insights Loader ─────────────────────────────
+    fetch('/api/ai/insights')
+        .then(r => r.json())
+        .then(data => {
+            const container = document.getElementById('ai-insights-content');
+            const status = document.getElementById('ai-insight-status');
+            if (!container) return;
+            
+            const bullets = data.insights || [];
+            if (bullets.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;padding:8px;">No telemetry available for AI insights generation.</p>';
+                status.textContent = 'No Data';
+                return;
+            }
+            
+            const icons = ['trending-up', 'map-pin', 'wifi', 'shield-alert'];
+            const colors = ['#667eea', '#10b981', '#f59e0b', '#ef4444'];
+            
+            container.innerHTML = bullets.map((b, i) => `
+                <div style="background: rgba(102,126,234,0.04); border: 1px solid rgba(102,126,234,0.12); border-radius: 8px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start;">
+                    <span style="flex-shrink:0; width:28px; height:28px; border-radius:50%; background: rgba(102,126,234,0.1); display:flex; align-items:center; justify-content:center;">
+                        <i data-lucide="${icons[i % icons.length]}" style="width:13px;height:13px;color:${colors[i % colors.length]};"></i>
+                    </span>
+                    <span style="font-size:0.86rem;line-height:1.6;color:var(--text-primary);">${b}</span>
+                </div>
+            `).join('');
+            
+            status.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:var(--color-safe);display:inline-block;margin-right:4px;"></span><span style="color:var(--color-safe);">Ready</span>`;
+            if (window.lucide) lucide.createIcons();
+        })
+        .catch(() => {
+            const status = document.getElementById('ai-insight-status');
+            if (status) status.textContent = 'Unavailable';
+        });
 </script>
-<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 {% endblock %}

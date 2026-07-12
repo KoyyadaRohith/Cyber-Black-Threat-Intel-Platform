@@ -1,6 +1,6 @@
 {% extends "base_auth.html" %}
 
-{% block title %}Threat Analytics - Malicious IP Intelligence System{% endblock %}
+{% block title %}Threat Analytics - Cyber Black Threat Intel Platform{% endblock %}
 {% block page_title %}Threat Analytics{% endblock %}
 {% block page_subtitle %}Deep visibility into attack surface risk, watchlist status, and threat trend behavior{% endblock %}
 
@@ -98,7 +98,7 @@
                             <td style="font-family: var(--font-mono); font-weight: 600;">{{ scan.ip }}</td>
                             <td>{{ scan.risk_score }}/100</td>
                             <td>
-                                <span class="badge {% if scan.classification == 'Safe' %}badge-safe{% elif scan.classification == 'Suspicious' %}badge-suspicious{% else %}badge-malicious{% endif %}">
+                                <span class="badge badge-{{ scan.classification.lower().replace(' ', '-') }}">
                                     {{ scan.classification }}
                                 </span>
                             </td>
@@ -144,11 +144,11 @@
                 {% if all_scans %}
                     {% for scan in all_scans %}
                         <tr>
-                            <td style="font-family: var(--font-mono); font-size: 0.8rem;">{{ scan.date.split('T')[0] }} {{ scan.date.split('T')[1][:5] if 'T' in scan.date else '' }}</td>
+                            <td style="font-family: var(--font-mono); font-size: 0.8rem;">{{ scan.date.split('T')[0] }}</td>
                             <td style="font-family: var(--font-mono); font-weight: 600;">{{ scan.ip }}</td>
                             <td>{{ scan.risk_score }}/100</td>
                             <td>
-                                <span class="badge {% if scan.classification == 'Safe' %}badge-safe{% elif scan.classification == 'Suspicious' %}badge-suspicious{% else %}badge-malicious{% endif %}">
+                                <span class="badge badge-{{ scan.classification.lower().replace(' ', '-') }}">
                                     {{ scan.classification }}
                                 </span>
                             </td>
@@ -167,17 +167,39 @@
         </table>
     </div>
 </div>
+
+<div id="analytics-config"
+     data-threat-breakdown-safe="{{ threat_breakdown.get('Safe', 0) }}"
+     data-threat-breakdown-low-risk="{{ threat_breakdown.get('Low Risk', 0) }}"
+     data-threat-breakdown-suspicious="{{ threat_breakdown.get('Suspicious', 0) }}"
+     data-threat-breakdown-high-risk="{{ threat_breakdown.get('High Risk', 0) }}"
+     data-threat-breakdown-malicious="{{ threat_breakdown.get('Malicious', 0) }}"
+     data-trend-labels='{{ trend_labels | tojson }}'
+     data-trend-counts='{{ trend_counts | tojson }}'
+     style="display: none;"></div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
+    const configEl = document.getElementById('analytics-config');
+    const safeCount = parseInt(configEl.getAttribute('data-threat-breakdown-safe') || '0', 10);
+    const lowRiskCount = parseInt(configEl.getAttribute('data-threat-breakdown-low-risk') || '0', 10);
+    const suspiciousCount = parseInt(configEl.getAttribute('data-threat-breakdown-suspicious') || '0', 10);
+    const highRiskCount = parseInt(configEl.getAttribute('data-threat-breakdown-high-risk') || '0', 10);
+    const maliciousCount = parseInt(configEl.getAttribute('data-threat-breakdown-malicious') || '0', 10);
+    const trendLabels = JSON.parse(configEl.getAttribute('data-trend-labels') || '[]');
+    const trendCounts = JSON.parse(configEl.getAttribute('data-trend-counts') || '[]');
+
     const classificationData = [
-        {{ threat_breakdown.Safe }},
-        {{ threat_breakdown.Suspicious }},
-        {{ threat_breakdown.Malicious }}
+        safeCount,
+        lowRiskCount,
+        suspiciousCount,
+        highRiskCount,
+        maliciousCount
     ];
-    const classificationLabels = ['Safe', 'Suspicious', 'Malicious'];
-    const classificationColors = ['#22c55e', '#f59e0b', '#ef4444'];
+    const classificationLabels = ['Safe', 'Low Risk', 'Suspicious', 'High Risk', 'Malicious'];
+    const classificationColors = ['#28a745', '#00e676', '#ffc107', '#ff9100', '#dc3545'];
 
     const breakdownCtx = document.getElementById('classificationBreakdownChart');
     if (breakdownCtx) {
@@ -207,10 +229,10 @@
         new Chart(trendCtx, {
             type: 'line',
             data: {
-                labels: {{ trend_labels | tojson }},
+                labels: trendLabels,
                 datasets: [{
                     label: 'Daily Investigations',
-                    data: {{ trend_counts | tojson }},
+                    data: trendCounts,
                     backgroundColor: 'rgba(59, 130, 246, 0.15)',
                     borderColor: 'rgba(59, 130, 246, 0.95)',
                     pointBackgroundColor: 'rgba(59, 130, 246, 1)',

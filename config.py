@@ -9,7 +9,7 @@ class Config:
     BASE_DIR = BASE_DIR
     
     # Flask settings
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'malicious-ip-intelligence-secret-key-1234')
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'cyber-black-threat-intelligence-secret-key-1234')
     
     # Upload Directories
     UPLOAD_FOLDER = BASE_DIR / 'uploads'
@@ -35,9 +35,17 @@ class Config:
     ABUSEIPDB_API_KEY = os.environ.get('ABUSEIPDB_API_KEY', '')
     VIRUSTOTAL_API_KEY = os.environ.get('VIRUSTOTAL_API_KEY', '')
 
+    # AI Intelligence Layer - V5.0
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+
     # Google OAuth credentials
     GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_OAUTH_CLIENT_ID', '')
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET', '')
+
+    # Supabase credentials
+    SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
+    SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY', '')
+    SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY', '')
 
     
     # Server configuration

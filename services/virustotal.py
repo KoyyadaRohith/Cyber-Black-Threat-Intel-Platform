@@ -5,15 +5,17 @@ from config import Config
 
 def check_ip_virustotal(ip, api_key=None):
     """
-    Query VirusTotal v3 IP Address API.
-    If no API key is present or error occurs, falls back to deterministic mock data.
+    Query VirusTotal v3 IP Address API with User-Agent header.
+    If an API key is present but a request error or status error occurs, logs details and returns clean empty live metrics.
+    If no API key is present at all, falls back to mock data.
     """
     key = api_key or Config.VIRUSTOTAL_API_KEY
     
     if key and key.strip():
         url = f'https://www.virustotal.com/api/v3/ip_addresses/{ip}'
         headers = {
-            'x-apikey': key
+            'x-apikey': key,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
         try:
             response = requests.get(url, headers=headers, timeout=5)
@@ -33,6 +35,7 @@ def check_ip_virustotal(ip, api_key=None):
                 asn = attributes.get('asn', 0)
                 network = attributes.get('network', '')
                 
+                print(f"[API LOG] VirusTotal response status 200 for {ip}. Detections: {malicious}/{total}")
                 return {
                     'ip': ip,
                     'malicious_count': malicious,
@@ -46,10 +49,40 @@ def check_ip_virustotal(ip, api_key=None):
                     'asn': asn,
                     'is_mock': False
                 }
-        except Exception:
-            pass
+            else:
+                print(f"[API ERROR] VirusTotal responded with status {response.status_code}: {response.text}")
+                return {
+                    'ip': ip,
+                    'malicious_count': 0,
+                    'suspicious_count': 0,
+                    'harmless_count': 0,
+                    'undetected_count': 0,
+                    'total_engines': 90,
+                    'reputation_score': 0,
+                    'tags': [],
+                    'network': '',
+                    'asn': 0,
+                    'is_mock': False,
+                    'api_error': f"HTTP {response.status_code}"
+                }
+        except Exception as e:
+            print(f"[API ERROR] VirusTotal request failed: {e}")
+            return {
+                'ip': ip,
+                'malicious_count': 0,
+                'suspicious_count': 0,
+                'harmless_count': 0,
+                'undetected_count': 0,
+                'total_engines': 90,
+                'reputation_score': 0,
+                'tags': [],
+                'network': '',
+                'asn': 0,
+                'is_mock': False,
+                'api_error': str(e)
+            }
             
-    # Mock fallback
+    # Mock fallback when no key is configured
     return get_mock_virustotal_data(ip)
 
 def get_mock_virustotal_data(ip):

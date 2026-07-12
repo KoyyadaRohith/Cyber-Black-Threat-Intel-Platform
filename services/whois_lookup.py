@@ -23,6 +23,7 @@ def get_whois_info(ip):
                 created_date = (datetime.now() - timedelta(days=365 * (ip_hash % 15 + 2))).strftime('%Y-%m-%d')
                 updated_date = (datetime.now() - timedelta(days=ip_hash % 200 + 10)).strftime('%Y-%m-%d')
                 
+                print(f"[API LOG] WHOIS response status 200 for {ip}. ISP: {data.get('isp')}")
                 return {
                     'ip': ip,
                     'country': data.get('country', 'Unknown'),
@@ -40,8 +41,10 @@ def get_whois_info(ip):
                     'timezone': data.get('timezone', 'UTC'),
                     'is_mock': False
                 }
-    except Exception:
-        pass
+            else:
+                print(f"[API ERROR] WHOIS query failed status message: {data.get('message')}")
+    except Exception as e:
+        print(f"[API ERROR] WHOIS query failed: {e}")
         
     return get_mock_whois_data(ip)
 

@@ -1,6 +1,6 @@
 {% extends "base_auth.html" %}
 
-{% block title %}Investigation Results - Malicious IP Intelligence System{% endblock %}
+{% block title %}Investigation Results - Cyber Black Threat Intel Platform{% endblock %}
 {% block page_title %}Bulk Diagnostic Report{% endblock %}
 {% block page_subtitle %}Aggregated metrics, infrastructure profiles, and detailed logs for file batch: {{ file_metadata.filename }}{% endblock %}
 
@@ -97,13 +97,13 @@
                             <td>
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <div style="width: 50px; background: rgba(255,255,255,0.05); height: 6px; border-radius: 3px; overflow: hidden;">
-                                        <div style="width: {{ row.risk_score }}%; height: 100%; background: {% if row.classification == 'Safe' %}var(--color-safe){% elif row.classification == 'Suspicious' %}var(--color-suspicious){% else %}var(--color-malicious){% endif %};"></div>
+                                        <div class="risk-fill-{{ row.classification.lower().replace(' ', '-') }} dynamic-risk-bar" data-risk-score="{{ row.risk_score }}" style="height: 100%;"></div>
                                     </div>
                                     <span style="font-family: var(--font-mono); font-size: 0.8rem;">{{ row.risk_score }}/100</span>
                                 </div>
                             </td>
                             <td>
-                                <span class="badge {% if row.classification == 'Safe' %}badge-safe{% elif row.classification == 'Suspicious' %}badge-suspicious{% else %}badge-malicious{% endif %}">
+                                <span class="badge badge-{{ row.classification.lower().replace(' ', '-') }}">
                                     {{ row.classification }}
                                 </span>
                             </td>
@@ -148,17 +148,22 @@
                 </div>
             </div>
         </div>
-    </div>
+    <div id="results-config" 
+         data-safe="{{ stats.safe }}"
+         data-suspicious="{{ stats.suspicious }}"
+         data-malicious="{{ stats.malicious }}"
+         style="display: none;"></div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
     // Ingress chart datasets
+    const resultsConfig = document.getElementById('results-config');
     window.threatDistributionData = {
-        safe: {{ stats.safe }},
-        suspicious: {{ stats.suspicious }},
-        malicious: {{ stats.malicious }}
+        safe: parseInt(resultsConfig.getAttribute('data-safe') || '0', 10),
+        suspicious: parseInt(resultsConfig.getAttribute('data-suspicious') || '0', 10),
+        malicious: parseInt(resultsConfig.getAttribute('data-malicious') || '0', 10)
     };
 </script>
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>

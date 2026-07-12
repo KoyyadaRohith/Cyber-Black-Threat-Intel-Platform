@@ -181,4 +181,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         animate();
     }
+
+    // Dynamic risk bar initialization to avoid Jinja templates in inline styles
+    const riskBars = document.querySelectorAll('.dynamic-risk-bar');
+    riskBars.forEach(bar => {
+        const score = bar.getAttribute('data-risk-score');
+        if (score) {
+            bar.style.width = score + '%';
+        }
+    });
 });

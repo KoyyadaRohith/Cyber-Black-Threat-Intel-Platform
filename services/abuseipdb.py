@@ -6,7 +6,8 @@ from config import Config
 def check_ip_abuse(ip, api_key=None):
     """
     Query AbuseIPDB API to check the reputation of an IP address.
-    If no API key is present or error occurs, falls back to deterministic mock data.
+    If an API key is present but a request error or status error occurs, logs details and returns clean empty live metrics.
+    If no API key is present at all, falls back to mock data.
     """
     key = api_key or Config.ABUSEIPDB_API_KEY
     
@@ -25,6 +26,7 @@ def check_ip_abuse(ip, api_key=None):
             response = requests.get(url, headers=headers, params=params, timeout=5)
             if response.status_code == 200:
                 data = response.json().get('data', {})
+                print(f"[API LOG] AbuseIPDB response status 200 for {ip}. Reports: {data.get('totalReports', 0)}, Score: {data.get('abuseConfidenceScore', 0)}%")
                 return {
                     'ip': ip,
                     'abuse_score': data.get('abuseConfidenceScore', 0),
@@ -37,10 +39,38 @@ def check_ip_abuse(ip, api_key=None):
                     'usage_type': data.get('usageType', 'Commercial'),
                     'is_mock': False
                 }
-        except Exception:
-            pass # Fall through to mock on exception
+            else:
+                print(f"[API ERROR] AbuseIPDB responded with status {response.status_code}: {response.text}")
+                return {
+                    'ip': ip,
+                    'abuse_score': 0,
+                    'total_reports': 0,
+                    'last_reported_at': None,
+                    'country_code': 'US',
+                    'country_name': 'United States',
+                    'isp': 'Unknown ISP (API Error)',
+                    'domain': '',
+                    'usage_type': 'Unknown',
+                    'is_mock': False,
+                    'api_error': f"HTTP {response.status_code}"
+                }
+        except Exception as e:
+            print(f"[API ERROR] AbuseIPDB request failed: {e}")
+            return {
+                'ip': ip,
+                'abuse_score': 0,
+                'total_reports': 0,
+                'last_reported_at': None,
+                'country_code': 'US',
+                'country_name': 'United States',
+                'isp': 'Unknown ISP (Connection Error)',
+                'domain': '',
+                'usage_type': 'Unknown',
+                'is_mock': False,
+                'api_error': str(e)
+            }
             
-    # Mock fallback (deterministic based on IP)
+    # Mock fallback (deterministic based on IP) when no key is configured
     return get_mock_abuse_data(ip)
 
 def get_mock_abuse_data(ip):

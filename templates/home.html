@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Malicious IP Intelligence System{% endblock %}
+{% block title %}Cyber Black Threat Intel Platform (CBTIP){% endblock %}
 
 {% block content %}
 <canvas id="particlesCanvas"></canvas>
@@ -16,23 +16,24 @@
         z-index: 0;
         pointer-events: none;
     }
+
     /* Premium Home page overrides and layout styling matching mock exactly */
     html {
         scroll-behavior: smooth;
     }
-    
+
     body {
         background-color: #03060f;
-        background-image: 
+        background-image:
             radial-gradient(at 10% 10%, rgba(0, 102, 255, 0.12) 0px, transparent 40%),
             radial-gradient(at 90% 10%, rgba(0, 240, 255, 0.08) 0px, transparent 40%),
             radial-gradient(at 50% 50%, rgba(0, 102, 255, 0.05) 0px, transparent 60%);
         overflow-y: auto;
     }
-    
+
     [data-theme="light"] body {
         background-color: #f8fafc;
-        background-image: 
+        background-image:
             radial-gradient(at 10% 10%, rgba(2, 132, 199, 0.08) 0px, transparent 45%),
             radial-gradient(at 90% 10%, rgba(59, 130, 246, 0.05) 0px, transparent 45%);
     }
@@ -54,19 +55,19 @@
         border-bottom: 1px solid rgba(0, 240, 255, 0.08);
         transition: all 0.3s;
     }
-    
+
     [data-theme="light"] .portal-nav {
         background: rgba(248, 250, 252, 0.85);
         border-bottom: 1px solid rgba(2, 132, 199, 0.08);
     }
-    
+
     .portal-logo {
         display: flex;
         align-items: center;
         gap: 12px;
         text-decoration: none;
     }
-    
+
     .logo-container {
         width: 40px;
         height: 40px;
@@ -75,7 +76,7 @@
         justify-content: center;
         overflow: hidden;
     }
-    
+
     .logo-img-el {
         width: 100%;
         height: 100%;
@@ -83,7 +84,8 @@
         display: block;
     }
 
-    .logo-container i, .logo-container svg {
+    .logo-container i,
+    .logo-container svg {
         color: #8b5cf6;
         width: 20px;
         height: 20px;
@@ -91,12 +93,12 @@
         display: block;
         filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.3));
     }
-    
+
     .logo-text {
         display: flex;
         flex-direction: column;
     }
-    
+
     .logo-title {
         font-size: 1.05rem;
         font-weight: 800;
@@ -104,13 +106,13 @@
         line-height: 1.2;
         letter-spacing: 0.02em;
     }
-    
+
     .logo-subtitle {
         font-size: 0.75rem;
         color: #94a3b8;
         font-weight: 500;
     }
-    
+
     [data-theme="light"] .logo-title {
         color: #0f172a;
     }
@@ -121,7 +123,7 @@
         gap: 25px;
         list-style: none;
     }
-    
+
     .nav-link-item {
         color: #94a3b8;
         text-decoration: none;
@@ -129,15 +131,18 @@
         font-weight: 500;
         transition: color 0.3s;
     }
-    
-    .nav-link-item:hover, .nav-link-item.active {
+
+    .nav-link-item:hover,
+    .nav-link-item.active {
         color: var(--primary);
     }
-    
+
     [data-theme="light"] .nav-link-item {
         color: #475569;
     }
-    [data-theme="light"] .nav-link-item:hover, [data-theme="light"] .nav-link-item.active {
+
+    [data-theme="light"] .nav-link-item:hover,
+    [data-theme="light"] .nav-link-item.active {
         color: var(--primary);
     }
 
@@ -162,7 +167,7 @@
         width: 58px;
         justify-content: space-between;
     }
-    
+
     .theme-pill-toggle i {
         width: 13px;
         height: 13px;
@@ -170,7 +175,7 @@
         z-index: 2;
         transition: color 0.3s;
     }
-    
+
     .theme-pill-toggle::after {
         content: '';
         position: absolute;
@@ -184,16 +189,17 @@
         transition: transform 0.3s ease;
         z-index: 1;
     }
-    
+
     [data-theme="light"] .theme-pill-toggle::after {
         transform: translateX(26px);
         background: #eab308;
         box-shadow: 0 0 10px rgba(234, 179, 8, 0.3);
     }
-    
+
     [data-theme="light"] .theme-pill-toggle i.sun-icon {
         color: #0f172a;
     }
+
     [data-theme="dark"] .theme-pill-toggle i.moon-icon {
         color: #0f172a;
     }
@@ -209,14 +215,14 @@
         margin: 0 auto;
         padding: 120px 20px 40px;
     }
-    
+
     .hero-content {
         display: flex;
         flex-direction: column;
         justify-content: center;
         text-align: left;
     }
-    
+
     .hero-subtitle-tag {
         font-size: 0.8rem;
         font-weight: 700;
@@ -226,7 +232,7 @@
         margin-bottom: 20px;
         font-family: var(--font-mono);
     }
-    
+
     .hero-headline {
         font-size: 3.8rem;
         font-weight: 800;
@@ -235,16 +241,16 @@
         letter-spacing: -0.01em;
         margin-bottom: 15px;
     }
-    
+
     .hero-headline span {
         color: var(--primary);
         text-shadow: 0 0 25px rgba(0, 240, 255, 0.2);
     }
-    
+
     [data-theme="light"] .hero-headline {
         color: #0f172a;
     }
-    
+
     .hero-description {
         font-size: 1.05rem;
         color: #94a3b8;
@@ -252,18 +258,18 @@
         margin-bottom: 35px;
         max-width: 520px;
     }
-    
+
     [data-theme="light"] .hero-description {
         color: #475569;
     }
-    
+
     .hero-actions {
         display: flex;
         align-items: center;
         gap: 16px;
         margin-bottom: 30px;
     }
-    
+
     .trusted-tag {
         display: flex;
         align-items: center;
@@ -272,11 +278,11 @@
         color: #64748b;
         font-weight: 500;
     }
-    
+
     .trusted-tag i {
         color: var(--color-safe);
     }
-    
+
     /* Graphic side with floating points and SVGs */
     .hero-graphic {
         position: relative;
@@ -284,7 +290,7 @@
         justify-content: center;
         align-items: center;
     }
-    
+
     .globe-container {
         position: relative;
         width: 100%;
@@ -308,7 +314,7 @@
         z-index: 1;
         pointer-events: none;
     }
-    
+
     .globe-container::after {
         content: '';
         position: absolute;
@@ -321,17 +327,27 @@
         z-index: 1;
         pointer-events: none;
     }
-    
+
     @keyframes rotateTech {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
     }
-    
+
     @keyframes rotateTechReverse {
-        from { transform: rotate(360deg); }
-        to { transform: rotate(0deg); }
+        from {
+            transform: rotate(360deg);
+        }
+
+        to {
+            transform: rotate(0deg);
+        }
     }
-    
+
     .globe-img {
         width: 82%;
         height: 82%;
@@ -342,10 +358,17 @@
         border-radius: 50%;
         position: relative;
     }
-    
+
     @keyframes floatGlobe {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-10px); }
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-10px);
+        }
     }
 
     /* Floating callouts around globe */
@@ -362,23 +385,23 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
         transition: all 0.3s;
         z-index: 10;
     }
-    
+
     [data-theme="light"] .globe-callout {
         background: rgba(255, 255, 255, 0.9);
         color: #0f172a;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     }
-    
+
     .globe-callout:hover {
         border-color: var(--primary);
         box-shadow: var(--neon-shadow);
         transform: translateY(-2px);
     }
-    
+
     .callout-dot {
         width: 6px;
         height: 6px;
@@ -386,14 +409,36 @@
         background: var(--primary);
         box-shadow: 0 0 8px var(--primary);
     }
-    
-    .co-realtime { top: 18%; left: 0%; }
-    .co-threat { top: 46%; left: -6%; }
-    .co-risk { top: 74%; left: 0%; }
-    
-    .co-reputation { top: 18%; right: 0%; }
-    .co-bulk { top: 46%; right: -6%; }
-    .co-detailed { top: 74%; right: 0%; }
+
+    .co-realtime {
+        top: 18%;
+        left: 0%;
+    }
+
+    .co-threat {
+        top: 46%;
+        left: -6%;
+    }
+
+    .co-risk {
+        top: 74%;
+        left: 0%;
+    }
+
+    .co-reputation {
+        top: 18%;
+        right: 0%;
+    }
+
+    .co-bulk {
+        top: 46%;
+        right: -6%;
+    }
+
+    .co-detailed {
+        top: 74%;
+        right: 0%;
+    }
 
     /* Dotted line SVG connectors overlay */
     .globe-connectors {
@@ -415,7 +460,7 @@
         grid-template-columns: repeat(4, 1fr);
         gap: 20px;
     }
-    
+
     .stat-card-custom {
         display: flex;
         align-items: center;
@@ -426,11 +471,11 @@
         border: 1px solid var(--border-color);
         box-shadow: var(--glass-shadow);
     }
-    
+
     [data-theme="light"] .stat-card-custom {
         background: rgba(255, 255, 255, 0.7);
     }
-    
+
     .stat-card-icon {
         width: 48px;
         height: 48px;
@@ -442,12 +487,12 @@
         justify-content: center;
         color: var(--primary);
     }
-    
+
     .stat-card-details {
         display: flex;
         flex-direction: column;
     }
-    
+
     .stat-card-num {
         font-size: 1.8rem;
         font-weight: 700;
@@ -455,22 +500,22 @@
         color: #fff;
         line-height: 1.1;
     }
-    
+
     [data-theme="light"] .stat-card-num {
         color: #0f172a;
     }
-    
+
     .stat-card-lbl {
         font-size: 0.8rem;
         color: #94a3b8;
         margin-top: 4px;
         font-weight: 500;
     }
-    
+
     [data-theme="light"] .stat-card-lbl {
         color: #475569;
     }
-    
+
     .stat-card-trend {
         font-size: 0.72rem;
         font-weight: 600;
@@ -665,10 +710,12 @@
         .workflow-connector-horizontal {
             display: none;
         }
+
         .workflow-track-horizontal {
             flex-direction: column;
             align-items: center;
         }
+
         .workflow-card-horizontal {
             width: 100%;
             max-width: 400px;
@@ -687,12 +734,12 @@
         max-width: 800px;
         margin: 40px auto 0;
     }
-    
+
     .workflow-alert-banner i {
         color: var(--color-safe);
         flex-shrink: 0;
     }
-    
+
     .workflow-alert-text {
         font-size: 0.85rem;
         color: #94a3b8;
@@ -713,11 +760,11 @@
         line-height: 1.6;
         margin-bottom: 25px;
     }
-    
+
     [data-theme="light"] .about-text-desc {
         color: #475569;
     }
-    
+
     .about-checkmarks {
         list-style: none;
         display: grid;
@@ -725,7 +772,7 @@
         gap: 15px;
         margin-bottom: 25px;
     }
-    
+
     .about-check-item {
         display: flex;
         align-items: center;
@@ -734,11 +781,11 @@
         color: #e2e8f0;
         font-weight: 500;
     }
-    
+
     [data-theme="light"] .about-check-item {
         color: #334155;
     }
-    
+
     .about-check-item i {
         color: var(--primary);
         font-size: 1rem;
@@ -753,7 +800,7 @@
         position: relative;
         z-index: 2;
     }
-    
+
     .about-graphic-container::after {
         content: '';
         position: absolute;
@@ -767,12 +814,21 @@
         pointer-events: none;
         border-radius: 14px;
     }
-    
+
     @keyframes pulsateGlow {
-        0%, 100% { transform: scale(0.95); opacity: 0.4; }
-        50% { transform: scale(1.05); opacity: 0.95; }
+
+        0%,
+        100% {
+            transform: scale(0.95);
+            opacity: 0.4;
+        }
+
+        50% {
+            transform: scale(1.05);
+            opacity: 0.95;
+        }
     }
-    
+
     .about-graphic-img {
         width: 100%;
         height: 250px;
@@ -873,6 +929,7 @@
         background: rgba(0, 162, 255, 0.05);
         border-color: rgba(0, 162, 255, 0.15);
     }
+
     .contact-info-card-item:hover .icon-email {
         background: rgba(0, 162, 255, 0.15);
         box-shadow: 0 0 10px rgba(0, 162, 255, 0.2);
@@ -883,6 +940,7 @@
         background: rgba(16, 185, 129, 0.05);
         border-color: rgba(16, 185, 129, 0.15);
     }
+
     .contact-info-card-item:hover .icon-phone {
         background: rgba(16, 185, 129, 0.15);
         box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
@@ -893,6 +951,7 @@
         background: rgba(168, 85, 247, 0.05);
         border-color: rgba(168, 85, 247, 0.15);
     }
+
     .contact-info-card-item:hover .icon-location {
         background: rgba(168, 85, 247, 0.15);
         box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
@@ -903,6 +962,7 @@
         background: rgba(245, 158, 11, 0.05);
         border-color: rgba(245, 158, 11, 0.15);
     }
+
     .contact-info-card-item:hover .icon-website {
         background: rgba(245, 158, 11, 0.15);
         box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
@@ -913,6 +973,7 @@
         background: rgba(0, 240, 255, 0.05);
         border-color: rgba(0, 240, 255, 0.15);
     }
+
     .contact-info-card-item:hover .icon-hours {
         background: rgba(0, 240, 255, 0.15);
         box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
@@ -938,6 +999,7 @@
         transition: color 0.3s;
         display: block;
     }
+
     .contact-info-value-email:hover {
         color: var(--primary);
     }
@@ -964,6 +1026,7 @@
         transition: color 0.3s;
         display: block;
     }
+
     .contact-info-value-website:hover {
         color: var(--primary);
     }
@@ -1172,18 +1235,18 @@
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         pointer-events: none;
     }
-    
+
     .contact-toast.show {
         transform: translateY(0);
         opacity: 1;
         pointer-events: auto;
     }
-    
+
     .contact-toast-icon {
         color: var(--color-safe);
         flex-shrink: 0;
     }
-    
+
     .contact-toast-text h5 {
         font-weight: 700;
         margin-bottom: 2px;
@@ -1191,7 +1254,7 @@
         letter-spacing: 0.05em;
         color: #fff;
     }
-    
+
     .contact-toast-text p {
         font-size: 0.78rem;
         color: #94a3b8;
@@ -1211,7 +1274,7 @@
         flex-wrap: wrap;
         gap: 20px;
     }
-    
+
     .footer-brand-logo {
         display: flex;
         align-items: center;
@@ -1220,32 +1283,32 @@
         text-decoration: none;
         color: #fff;
     }
-    
+
     [data-theme="light"] .footer-brand-logo {
         color: #0f172a;
     }
-    
+
     .footer-links-row {
         display: flex;
         gap: 20px;
         list-style: none;
     }
-    
+
     .footer-links-row a {
         color: #64748b;
         text-decoration: none;
         transition: color 0.3s;
     }
-    
+
     .footer-links-row a:hover {
         color: var(--primary);
     }
-    
+
     .footer-social-links {
         display: flex;
         gap: 16px;
     }
-    
+
     .footer-social-btn {
         width: 32px;
         height: 32px;
@@ -1259,7 +1322,7 @@
         transition: all 0.3s;
         text-decoration: none;
     }
-    
+
     .footer-social-btn:hover {
         color: var(--primary);
         border-color: var(--primary);
@@ -1272,16 +1335,16 @@
             text-align: center;
             padding-top: 100px;
         }
-        
+
         .hero-content {
             align-items: center;
             text-align: center;
         }
-        
+
         .hero-headline {
             font-size: 2.8rem;
         }
-        
+
         .home-stats-row {
             grid-template-columns: repeat(2, 1fr);
         }
@@ -1297,7 +1360,7 @@
         .contact-grid-layout {
             grid-template-columns: 1fr;
         }
-        
+
         .nav-links {
             display: none;
         }
@@ -1307,9 +1370,11 @@
         .features-grid-custom {
             grid-template-columns: 1fr;
         }
+
         .home-stats-row {
             grid-template-columns: 1fr;
         }
+
         .about-checkmarks {
             grid-template-columns: 1fr;
         }
@@ -1323,11 +1388,11 @@
             <img src="{{ url_for('static', filename='img/logo_shield.png') }}" class="logo-img-el" alt="Shield Logo">
         </div>
         <div class="logo-text">
-            <span class="logo-title">Malicious IP</span>
-            <span class="logo-subtitle">Intelligence System</span>
+            <span class="logo-title">Cyber Black</span>
+            <span class="logo-subtitle">Threat Intel Platform</span>
         </div>
     </a>
-    
+
     <ul class="nav-links">
         <li><a href="#" class="nav-link-item active">Home</a></li>
         <li><a href="#features" class="nav-link-item">Features</a></li>
@@ -1335,7 +1400,7 @@
         <li><a href="#about" class="nav-link-item">About</a></li>
         <li><a href="#contact" class="nav-link-item">Contact</a></li>
     </ul>
-    
+
     <div class="nav-actions">
         <!-- Theme Switcher Toggler Pill -->
         <div id="themeToggleBtn" class="theme-pill-toggle" title="Toggle Theme Mode">
@@ -1348,40 +1413,50 @@
 <!-- Main Landing Hero Section -->
 <section class="hero-wrapper">
     <div class="hero-content">
-        <div class="hero-subtitle-tag">Threat Intelligence and IP Reputation Analysis Platform</div>
-        <h1 class="hero-headline">Malicious <span>IP</span><br>Intelligence System</h1>
-        <p class="hero-description">Analyze, detect, investigate and protect your network infrastructure with real-time threat intelligence from leading security sources.</p>
-        
+        <div class="hero-subtitle-tag">AI-Powered Threat Intelligence & Security Investigation Platform</div>
+        <h1 class="hero-headline">Cyber <span>Black</span><br>Threat Intel Platform</h1>
+        <p class="hero-description">Analyze, detect, investigate and protect your network infrastructure with real-time
+            threat intelligence from leading security sources.</p>
+
         <div class="hero-actions">
-            <a href="{{ url_for('register') }}" class="btn btn-primary" style="padding: 12px 28px; border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            <a href="{{ url_for('register') }}" class="btn btn-primary"
+                style="padding: 12px 28px; border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
                 Get Started <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
             </a>
-            <a href="{{ url_for('login') }}" class="btn btn-secondary" style="padding: 12px 28px; border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border-color);">
+            <a href="{{ url_for('login') }}" class="btn btn-secondary"
+                style="padding: 12px 28px; border-radius: 6px; font-weight: 600; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border-color);">
                 Login <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
             </a>
         </div>
-        
+
         <div class="trusted-tag">
             <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i>
             <span>Trusted by security analysts and organizations worldwide</span>
         </div>
     </div>
-    
+
     <div class="hero-graphic">
         <div class="globe-container">
             <!-- SVG dotted connector lines -->
             <svg class="globe-connectors" viewBox="0 0 540 480">
-                <line x1="120" y1="100" x2="210" y2="160" stroke="rgba(0, 240, 255, 0.3)" stroke-width="1" stroke-dasharray="4 3" />
-                <line x1="110" y1="230" x2="200" y2="235" stroke="rgba(0, 240, 255, 0.3)" stroke-width="1" stroke-dasharray="4 3" />
-                <line x1="120" y1="365" x2="210" y2="310" stroke="rgba(0, 240, 255, 0.3)" stroke-width="1" stroke-dasharray="4 3" />
-                
-                <line x1="420" y1="100" x2="330" y2="160" stroke="rgba(0, 240, 255, 0.3)" stroke-width="1" stroke-dasharray="4 3" />
-                <line x1="430" y1="230" x2="340" y2="235" stroke="rgba(0, 240, 255, 0.3)" stroke-width="1" stroke-dasharray="4 3" />
-                <line x1="420" y1="365" x2="330" y2="310" stroke="rgba(0, 240, 255, 0.3)" stroke-width="1" stroke-dasharray="4 3" />
+                <line x1="120" y1="100" x2="210" y2="160" stroke="rgba(0, 240, 255, 0.3)" stroke-width="1"
+                    stroke-dasharray="4 3" />
+                <line x1="110" y1="230" x2="200" y2="235" stroke="rgba(0, 240, 255, 0.3)" stroke-width="1"
+                    stroke-dasharray="4 3" />
+                <line x1="120" y1="365" x2="210" y2="310" stroke="rgba(0, 240, 255, 0.3)" stroke-width="1"
+                    stroke-dasharray="4 3" />
+
+                <line x1="420" y1="100" x2="330" y2="160" stroke="rgba(0, 240, 255, 0.3)" stroke-width="1"
+                    stroke-dasharray="4 3" />
+                <line x1="430" y1="230" x2="340" y2="235" stroke="rgba(0, 240, 255, 0.3)" stroke-width="1"
+                    stroke-dasharray="4 3" />
+                <line x1="420" y1="365" x2="330" y2="310" stroke="rgba(0, 240, 255, 0.3)" stroke-width="1"
+                    stroke-dasharray="4 3" />
             </svg>
-            
-            <img src="{{ url_for('static', filename='img/holographic_globe.png') }}" class="globe-img" alt="Holographic Globe Network">
-            
+
+            <img src="{{ url_for('static', filename='img/holographic_globe.png') }}" class="globe-img"
+                alt="Holographic Globe Network">
+
             <!-- Left callout labels -->
             <div class="globe-callout co-realtime">
                 <span class="callout-dot"></span>
@@ -1395,7 +1470,7 @@
                 <span class="callout-dot"></span>
                 <span>Risk Assessment</span>
             </div>
-            
+
             <!-- Right callout labels -->
             <div class="globe-callout co-reputation">
                 <span class="callout-dot"></span>
@@ -1420,40 +1495,47 @@
             <i data-lucide="activity" style="width: 20px; height: 20px;"></i>
         </div>
         <div class="stat-card-details">
-            <span class="stat-card-num animate-counter" data-target-val="{{ total_scans }}">{{ '{:,}'.format(total_scans) }}</span>
+            <span class="stat-card-num animate-counter" data-target-val="{{ total_scans }}">{{
+                '{:,}'.format(total_scans) }}</span>
             <span class="stat-card-lbl">Total Investigations</span>
             <span class="stat-card-trend">Live data synced</span>
         </div>
     </div>
-    
+
     <div class="stat-card-custom">
-        <div class="stat-card-icon" style="color: var(--color-malicious); border-color: rgba(255,0,85,0.15); background: rgba(255,0,85,0.02)">
+        <div class="stat-card-icon"
+            style="color: var(--color-malicious); border-color: rgba(255,0,85,0.15); background: rgba(255,0,85,0.02)">
             <i data-lucide="shield-alert" style="width: 20px; height: 20px;"></i>
         </div>
         <div class="stat-card-details">
-            <span class="stat-card-num animate-counter" data-target-val="{{ malicious_scans }}" style="color: var(--color-malicious)">{{ '{:,}'.format(malicious_scans) }}</span>
+            <span class="stat-card-num animate-counter" data-target-val="{{ malicious_scans }}"
+                style="color: var(--color-malicious)">{{ '{:,}'.format(malicious_scans) }}</span>
             <span class="stat-card-lbl">Threats Detected</span>
             <span class="stat-card-trend">Live data synced</span>
         </div>
     </div>
-    
+
     <div class="stat-card-custom">
-        <div class="stat-card-icon" style="color: var(--color-safe); border-color: rgba(16,185,129,0.15); background: rgba(16,185,129,0.02)">
+        <div class="stat-card-icon"
+            style="color: var(--color-safe); border-color: rgba(16,185,129,0.15); background: rgba(16,185,129,0.02)">
             <i data-lucide="file-check-2" style="width: 20px; height: 20px;"></i>
         </div>
         <div class="stat-card-details">
-            <span class="stat-card-num animate-counter" data-target-val="{{ total_reports }}" style="color: var(--color-safe)">{{ '{:,}'.format(total_reports) }}</span>
+            <span class="stat-card-num animate-counter" data-target-val="{{ total_reports }}"
+                style="color: var(--color-safe)">{{ '{:,}'.format(total_reports) }}</span>
             <span class="stat-card-lbl">Reports Generated</span>
             <span class="stat-card-trend">Live data synced</span>
         </div>
     </div>
-    
+
     <div class="stat-card-custom">
-        <div class="stat-card-icon" style="color: var(--color-suspicious); border-color: rgba(245,158,11,0.15); background: rgba(245,158,11,0.02)">
+        <div class="stat-card-icon"
+            style="color: var(--color-suspicious); border-color: rgba(245,158,11,0.15); background: rgba(245,158,11,0.02)">
             <i data-lucide="bookmark" style="width: 20px; height: 20px;"></i>
         </div>
         <div class="stat-card-details">
-            <span class="stat-card-num animate-counter" data-target-val="{{ watchlist_count }}" style="color: var(--color-suspicious)">{{ '{:,}'.format(watchlist_count) }}</span>
+            <span class="stat-card-num animate-counter" data-target-val="{{ watchlist_count }}"
+                style="color: var(--color-suspicious)">{{ '{:,}'.format(watchlist_count) }}</span>
             <span class="stat-card-lbl">Watchlisted IPs</span>
             <span class="stat-card-trend">Live data synced</span>
         </div>
@@ -1467,56 +1549,63 @@
             <i data-lucide="zap" style="color: var(--primary); width: 24px; height: 24px;"></i>
             Powerful Features
         </h2>
-        <p class="section-subtitle-custom">Comprehensive threat mapping and investigation tools for network operators</p>
+        <p class="section-subtitle-custom">Comprehensive threat mapping and investigation tools for network operators
+        </p>
     </div>
-    
+
     <div class="features-grid-custom">
         <div class="feature-card-custom">
             <div class="feature-icon-custom">
                 <i data-lucide="search"></i>
             </div>
             <h3 class="feature-title-custom">IP Investigation</h3>
-            <p class="feature-desc-custom">Perform reputation scans on single target hosts. Query WHOIS owners, ISP registries, geo-coordinates, and vendor warnings.</p>
+            <p class="feature-desc-custom">Perform reputation scans on single target hosts. Query WHOIS owners, ISP
+                registries, geo-coordinates, and vendor warnings.</p>
         </div>
-        
+
         <div class="feature-card-custom">
             <div class="feature-icon-custom">
                 <i data-lucide="file-spreadsheet"></i>
             </div>
             <h3 class="feature-title-custom">Bulk File Analysis</h3>
-            <p class="feature-desc-custom">Ingest massive unstructured firewall syslogs or CSV files. Automatically extract valid IPs, scrub duplicates, and run parallel diagnostics.</p>
+            <p class="feature-desc-custom">Ingest massive unstructured firewall syslogs or CSV files. Automatically
+                extract valid IPs, scrub duplicates, and run parallel diagnostics.</p>
         </div>
-        
+
         <div class="feature-card-custom">
             <div class="feature-icon-custom">
                 <i data-lucide="rss"></i>
             </div>
             <h3 class="feature-title-custom">Threat Intelligence</h3>
-            <p class="feature-desc-custom">Integrate telemetry directly from leading security databases including AbuseIPDB, VirusTotal, and active routing registries.</p>
+            <p class="feature-desc-custom">Integrate telemetry directly from leading security databases including
+                AbuseIPDB, VirusTotal, and active routing registries.</p>
         </div>
-        
+
         <div class="feature-card-custom">
             <div class="feature-icon-custom">
                 <i data-lucide="shield-check"></i>
             </div>
             <h3 class="feature-title-custom">Risk Classification</h3>
-            <p class="feature-desc-custom">Determine overall danger levels instantly using color-coded rating indexes: Safe, Suspicious, or Malicious threat levels.</p>
+            <p class="feature-desc-custom">Determine overall danger levels instantly using color-coded rating indexes:
+                Safe, Suspicious, or Malicious threat levels.</p>
         </div>
-        
+
         <div class="feature-card-custom">
             <div class="feature-icon-custom">
                 <i data-lucide="file-down"></i>
             </div>
             <h3 class="feature-title-custom">Reports & Export</h3>
-            <p class="feature-desc-custom">Compile details into standard incident documents. Export query records in CSV datasets, plaintext TXT audits, or print-ready layouts.</p>
+            <p class="feature-desc-custom">Compile details into standard incident documents. Export query records in CSV
+                datasets, plaintext TXT audits, or print-ready layouts.</p>
         </div>
-        
+
         <div class="feature-card-custom">
             <div class="feature-icon-custom">
                 <i data-lucide="eye"></i>
             </div>
             <h3 class="feature-title-custom">Watchlist Management</h3>
-            <p class="feature-desc-custom">Keep active targets monitored in surveillance watchlist registers and receive notifications if risk indices change.</p>
+            <p class="feature-desc-custom">Keep active targets monitored in surveillance watchlist registers and receive
+                notifications if risk indices change.</p>
         </div>
     </div>
 </section>
@@ -1530,7 +1619,7 @@
         </h2>
         <p class="section-subtitle-custom">Visual overview of the security pipeline execution</p>
     </div>
-    
+
     <div class="workflow-track-horizontal">
         <div class="workflow-card-horizontal">
             <div class="step-badge-custom">1</div>
@@ -1538,38 +1627,39 @@
             <p class="step-desc-custom">IP Address / File Log Upload</p>
         </div>
         <div class="workflow-connector-horizontal"></div>
-        
+
         <div class="workflow-card-horizontal">
             <div class="step-badge-custom">2</div>
             <h4 class="step-title-custom">Threat Intel</h4>
             <p class="step-desc-custom">Collect telemetry from threat feeds</p>
         </div>
         <div class="workflow-connector-horizontal"></div>
-        
+
         <div class="workflow-card-horizontal">
             <div class="step-badge-custom">3</div>
             <h4 class="step-title-custom">Analysis</h4>
             <p class="step-desc-custom">Scan context and calculate risk rating</p>
         </div>
         <div class="workflow-connector-horizontal"></div>
-        
+
         <div class="workflow-card-horizontal">
             <div class="step-badge-custom">4</div>
             <h4 class="step-title-custom">Classification</h4>
             <p class="step-desc-custom">Group targets into threat categories</p>
         </div>
         <div class="workflow-connector-horizontal"></div>
-        
+
         <div class="workflow-card-horizontal">
             <div class="step-badge-custom">5</div>
             <h4 class="step-title-custom">Report</h4>
             <p class="step-desc-custom">Generate detailed playbooks & exports</p>
         </div>
     </div>
-    
+
     <div class="workflow-alert-banner">
         <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i>
-        <div class="workflow-alert-text">Our system uses advanced algorithms and threat intelligence to provide accurate and actionable insights for better security decisions.</div>
+        <div class="workflow-alert-text">Our system uses advanced algorithms and threat intelligence to provide accurate
+            and actionable insights for better security decisions.</div>
     </div>
 </section>
 
@@ -1582,12 +1672,16 @@
         </h2>
         <p class="section-subtitle-custom">Learn about our objective and technical infrastructure</p>
     </div>
-    
+
     <div class="about-grid-layout">
         <div>
-            <h3 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 15px;">Unified Threat Diagnostics</h3>
-            <p class="about-text-desc">Malicious IP Intelligence System is built for security professionals, analysts, and organizations to detect, investigate and respond to IP based threats effectively. Our objective is to deliver a lightweight, high-performance console that simplifies incident response times. Analysts can quickly upload system firewall logs, isolate malicious nodes, and deploy blocking firewall rules.</p>
-            
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 15px;">Unified Threat
+                Diagnostics</h3>
+            <p class="about-text-desc">Cyber Black Threat Intel Platform is an AI-powered cybersecurity platform
+                designed to help security professionals investigate IP reputation, analyze cyber threats, manage
+                investigations, monitor watchlists, generate professional security reports, and receive AI-assisted
+                threat intelligence through one centralized platform.</p>
+
             <ul class="about-checkmarks">
                 <li class="about-check-item">
                     <i data-lucide="check-circle-2"></i>
@@ -1607,11 +1701,12 @@
                 </li>
             </ul>
         </div>
-        
+
         <div>
             <!-- Hacker graphic card -->
             <div class="about-graphic-container">
-                <img src="{{ url_for('static', filename='img/cyber_hacker.png') }}" class="about-graphic-img" alt="Cyber Security Analysis illustration" style="height: 220px;">
+                <img src="{{ url_for('static', filename='img/cyber_hacker.png') }}" class="about-graphic-img"
+                    alt="Cyber Security Analysis illustration" style="height: 220px;">
             </div>
         </div>
     </div>
@@ -1629,13 +1724,13 @@
             <br>I'll get back to you as soon as possible.
         </p>
     </div>
-    
+
     <div class="contact-split-layout">
         <!-- Left Column: Contact Information -->
         <div>
             <h3 class="contact-column-title">Contact Information</h3>
             <div class="contact-info-list">
-                
+
                 <!-- Email Card -->
                 <div class="contact-info-card-item">
                     <div class="contact-card-icon-container icon-email">
@@ -1643,7 +1738,8 @@
                     </div>
                     <div>
                         <span class="contact-info-label">Email</span>
-                        <a href="mailto:admin@maliciousip.com" class="contact-info-value-email">admin@maliciousip.com</a>
+                        <a href="mailto:admin@maliciousip.com"
+                            class="contact-info-value-email">admin@maliciousip.com</a>
                         <span class="contact-info-subtext">For general inquiries and support</span>
                     </div>
                 </div>
@@ -1679,7 +1775,8 @@
                     </div>
                     <div>
                         <span class="contact-info-label">Website</span>
-                        <a href="https://www.maliciousip.com" target="_blank" class="contact-info-value-website">www.maliciousip.com</a>
+                        <a href="https://Official Website (Coming Soon)" target="_blank"
+                            class="contact-info-value-website">Official Website (Coming Soon)</a>
                         <span class="contact-info-subtext">Visit our platform</span>
                     </div>
                 </div>
@@ -1702,7 +1799,7 @@
         <!-- Right Column: Send Us A Message Form -->
         <div>
             <h3 class="contact-column-title">Send Us A Message</h3>
-            
+
             <form id="contactForm" action="#" class="contact-form-card">
                 <div class="contact-form-row">
                     <div class="contact-field-group">
@@ -1711,24 +1808,26 @@
                     </div>
                     <div class="contact-field-group">
                         <i data-lucide="mail" class="contact-field-icon"></i>
-                        <input type="email" id="cf_email" class="contact-form-input" placeholder="Email Address" required>
+                        <input type="email" id="cf_email" class="contact-form-input" placeholder="Email Address"
+                            required>
                     </div>
                 </div>
-                
+
                 <div class="contact-field-group">
                     <i data-lucide="file-text" class="contact-field-icon"></i>
                     <input type="text" id="cf_subject" class="contact-form-input" placeholder="Subject" required>
                 </div>
-                
+
                 <div class="contact-field-group">
                     <i data-lucide="edit" class="contact-field-icon" style="top: 24px; transform: none;"></i>
-                    <textarea id="cf_message" class="contact-form-textarea" placeholder="Your Message" required></textarea>
+                    <textarea id="cf_message" class="contact-form-textarea" placeholder="Your Message"
+                        required></textarea>
                 </div>
-                
+
                 <button type="submit" class="contact-btn-gradient">
                     <i data-lucide="send" style="width: 16px; height: 16px;"></i> Send Message
                 </button>
-                
+
                 <!-- Shield Check Info Card -->
                 <div class="contact-status-card">
                     <i data-lucide="shield-check" class="contact-status-icon"></i>
@@ -1742,28 +1841,14 @@
     </div>
 </section>
 
-<!-- Footer Matching the Mockup -->
-<footer class="portal-footer-custom">
-    <a href="#" class="footer-brand-logo">
-        <div class="logo-container" style="width: 32px; height: 32px; overflow: hidden;">
-            <img src="{{ url_for('static', filename='img/logo_shield.png') }}" class="logo-img-el" alt="Shield Logo">
-        </div>
-        <span style="font-size: 0.9rem; font-weight: 700;">Malicious IP <span style="color: var(--text-muted); font-weight: 500;">Intelligence System</span></span>
-    </a>
-    
-    <span>© 2026 Malicious IP Intelligence System. All rights reserved.</span>
-    
-    <ul class="footer-links-row">
-        <li><a href="#features">Features</a></li>
-        <li><a href="#workflow">Workflow</a></li>
-        <li><a href="#about">About</a></li>
-        <li><a href="#contact">Contact</a></li>
-    </ul>
-    
-    <div class="footer-social-links">
-        <a href="#" class="footer-social-btn"><i data-lucide="twitter" style="width: 14px; height: 14px;"></i></a>
-        <a href="#" class="footer-social-btn"><i data-lucide="linkedin" style="width: 14px; height: 14px;"></i></a>
-        <a href="#" class="footer-social-btn"><i data-lucide="github" style="width: 14px; height: 14px;"></i></a>
+<!-- Footer Simplified and Standardized -->
+<footer class="portal-footer-custom"
+    style="display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; padding: 25px 20px !important; border-top: 1px solid var(--border-color) !important; background: transparent !important; text-align: center !important; gap: 6px !important; margin: 60px auto 0 !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important;">
+    <div style="font-size: 0.88rem; color: var(--text-primary); font-weight: 500; letter-spacing: 0.02em;">
+        © 2026 Cyber Black Threat Intel Platform
+    </div>
+    <div style="font-size: 0.78rem; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; font-weight: 600;">
+        Cyber Black World (CBW) Ecosystem
     </div>
 </footer>
 
@@ -1799,16 +1884,16 @@
         if (contactForm) {
             contactForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                
+
                 const name = document.getElementById('cf_name').value.trim();
                 const email = document.getElementById('cf_email').value.trim();
                 const subject = document.getElementById('cf_subject').value.trim();
                 const message = document.getElementById('cf_message').value.trim();
-                
+
                 if (!name || !email || !subject || !message) {
                     return;
                 }
-                
+
                 // Show floating cyber security toast notification
                 let toast = document.querySelector('.contact-toast');
                 if (!toast) {
@@ -1826,15 +1911,15 @@
                     document.body.appendChild(toast);
                     if (window.lucide) lucide.createIcons();
                 }
-                
+
                 // Trigger show transition
                 setTimeout(() => {
                     toast.classList.add('show');
                 }, 50);
-                
+
                 // Reset form
                 contactForm.reset();
-                
+
                 // Hide toast after 4 seconds
                 setTimeout(() => {
                     toast.classList.remove('show');

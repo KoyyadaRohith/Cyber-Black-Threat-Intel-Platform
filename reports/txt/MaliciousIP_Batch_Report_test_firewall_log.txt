@@ -1,5 +1,5 @@
 ======================================================================
-          MALICIOUS IP INTELLIGENCE SYSTEM - BATCH INGESTION SUMMARY
+          CYBER BLACK THREAT INTEL PLATFORM - BATCH INGESTION SUMMARY
 ======================================================================
 Report Timestamp: 2026-06-04 22:19:00
 Source Filename:  test_firewall_log

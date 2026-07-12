@@ -1,6 +1,6 @@
 {% extends "base_auth.html" %}
 
-{% block title %}Pipeline Processing - Malicious IP Intelligence System{% endblock %}
+{% block title %}Pipeline Processing - Cyber Black Threat Intel Platform{% endblock %}
 {% block page_title %}Security Pipeline Analysis{% endblock %}
 {% block page_subtitle %}Live thread telemetry analysis in progress. Performing diagnostic queries on parsed targets.{% endblock %}
 
@@ -32,6 +32,12 @@
 </style>
 
 <div class="analysis-layout">
+    <div id="pipeline-config" 
+         data-unique-ips='{{ unique_ips | tojson }}'
+         data-filename="{{ filename }}"
+         data-file-upload-url="{{ url_for('file_upload') }}"
+         data-save-url="{{ url_for('save_bulk_session') }}"
+         style="display: none;"></div>
     <div class="glass-panel" style="padding: 24px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <span style="font-weight: 600; font-size: 0.95rem;" id="progressLabel">Initializing Diagnostic Pipeline...</span>
@@ -65,13 +71,16 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const uniqueIps = {{ unique_ips | tojson }};
-        const batchName = "{{ filename }}";
+        const configEl = document.getElementById('pipeline-config');
+        const uniqueIps = JSON.parse(configEl.getAttribute('data-unique-ips') || '[]');
+        const batchName = configEl.getAttribute('data-filename');
+        const fileUploadUrl = configEl.getAttribute('data-file-upload-url');
+        const saveUrl = configEl.getAttribute('data-save-url');
         const total = uniqueIps.length;
         
         if (total === 0) {
             appendLog('[ERROR] Parse buffer empty. Aborting pipeline.', 'danger');
-            setTimeout(() => window.location.href = "{{ url_for('file_upload') }}", 2000);
+            setTimeout(() => window.location.href = fileUploadUrl, 2000);
             return;
         }
 
@@ -100,7 +109,7 @@
                 appendLog('[INFO] Ingestion lookup stage complete. Finalizing database operations...', 'info');
                 
                 try {
-                    const saveResponse = await fetch("{{ url_for('save_bulk_session') }}", {
+                    const saveResponse = await fetch(saveUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({

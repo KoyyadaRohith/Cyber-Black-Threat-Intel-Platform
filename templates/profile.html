@@ -1,6 +1,6 @@
 {% extends "base_auth.html" %}
 
-{% block title %}Profile - Malicious IP Intelligence System{% endblock %}
+{% block title %}Profile - Cyber Black Threat Intel Platform{% endblock %}
 {% block page_title %}Profile{% endblock %}
 {% block page_subtitle %}Manage your account details and profile information{% endblock %}
 
@@ -25,7 +25,7 @@
 
         <h3 id="card_full_name" style="font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; color: var(--text-primary);">{{ user.full_name }}</h3>
         <p id="card_username" style="color: var(--primary); font-size: 0.95rem; font-weight: 600; letter-spacing: 0.08em; margin-bottom: 12px;">@{{ user.username }}</p>
-        <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 18px;">Threat Intelligence and IP Reputation Analysis Platform</p>
+
 
         <div style="display: grid; gap: 12px; text-align: left; padding: 0 15px;">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
@@ -34,7 +34,7 @@
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
                 <span style="font-size: 0.82rem; color: var(--text-primary); font-weight: 700;">Organization</span>
-                <span id="display_organization_left" style="font-size: 0.92rem; color: var(--text-secondary); font-weight: 500;">{{ user.organization or 'Malicious IP Intelligence System' }}</span>
+                <span id="display_organization_left" style="font-size: 0.92rem; color: var(--text-secondary); font-weight: 500;">{{ user.organization or 'Cyber Black Threat Intel Platform' }}</span>
             </div>
         </div>
 
@@ -87,8 +87,8 @@
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px;">
                 <span class="form-label" style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 500;">Organization</span>
-                <span id="display_organization_right" class="profile-field-value" style="color: var(--text-secondary);">{{ user.organization or 'Malicious IP Intelligence System' }}</span>
-                <input type="text" id="input_organization" class="profile-field-input hidden" value="{{ user.organization or 'Malicious IP Intelligence System' }}" readonly>
+                <span id="display_organization_right" class="profile-field-value" style="color: var(--text-secondary);">{{ user.organization or 'Cyber Black Threat Intel Platform' }}</span>
+                <input type="text" id="input_organization" class="profile-field-input hidden" value="{{ user.organization or 'Cyber Black Threat Intel Platform' }}" readonly>
             </div>
 
             <div style="grid-column: span 2; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 6px;">
@@ -246,7 +246,7 @@
             });
             ['role', 'organization'].forEach(field => {
                 const left = document.getElementById(`display_${field}_left`);
-                if (left) left.textContent = user[field] || (field === 'role' ? 'Threat Analyst' : 'Malicious IP Intelligence System');
+                if (left) left.textContent = user[field] || (field === 'role' ? 'Threat Analyst' : 'Cyber Black Threat Intel Platform');
             });
             originalState.bio = user.bio || '';
             if (bioView) bioView.textContent = originalState.bio || 'No bio provided.';

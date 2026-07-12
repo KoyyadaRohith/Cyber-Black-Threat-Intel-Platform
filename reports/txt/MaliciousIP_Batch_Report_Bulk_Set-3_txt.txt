@@ -1,5 +1,5 @@
 ======================================================================
-          MALICIOUS IP INTELLIGENCE SYSTEM - BATCH INGESTION SUMMARY
+          CYBER BLACK THREAT INTEL PLATFORM - BATCH INGESTION SUMMARY
 ======================================================================
 Report Timestamp: 2026-06-05 22:08:20
 Source Filename:  Bulk_Set-3_txt

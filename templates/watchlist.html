@@ -1,6 +1,6 @@
 {% extends "base_auth.html" %}
 
-{% block title %}Watchlist - Malicious IP Intelligence System{% endblock %}
+{% block title %}Watchlist - Cyber Black Threat Intel Platform{% endblock %}
 {% block page_title %}Security Watchlist{% endblock %}
 {% block page_subtitle %}Actively monitored suspicious or malicious nodes currently blacklisted or under audit surveillance{% endblock %}
 
@@ -59,13 +59,13 @@
                             <td>
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <div style="width: 50px; background: rgba(255,255,255,0.05); height: 6px; border-radius: 3px; overflow: hidden;">
-                                        <div style="width: {{ row.risk_score }}%; height: 100%; background: {% if row.classification == 'Safe' %}var(--color-safe){% elif row.classification == 'Suspicious' %}var(--color-suspicious){% else %}var(--color-malicious){% endif %};"></div>
+                                        <div class="risk-fill-{{ row.classification.lower().replace(' ', '-') }} dynamic-risk-bar" data-risk-score="{{ row.risk_score }}" style="height: 100%;"></div>
                                     </div>
                                     <span style="font-family: var(--font-mono); font-size: 0.8rem;">{{ row.risk_score }}/100</span>
                                 </div>
                             </td>
                             <td>
-                                <span class="badge {% if row.classification == 'Safe' %}badge-safe{% elif row.classification == 'Suspicious' %}badge-suspicious{% else %}badge-malicious{% endif %}">
+                                <span class="badge badge-{{ row.classification.lower().replace(' ', '-') }}">
                                     {{ row.classification }}
                                 </span>
                             </td>

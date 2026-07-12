@@ -2,17 +2,26 @@ import io
 import csv
 from datetime import datetime
 
-def generate_csv_report(data_list, fieldnames):
+def generate_csv_report(data_list, fieldnames=None):
     """
     Generate a CSV formatted string from a list of dictionaries.
+    If fieldnames is not provided, dynamically generate headers from the dictionary keys.
     """
+    if not data_list:
+        return ""
+        
+    if not fieldnames:
+        # Dynamically extract all unique keys from data_list
+        keys = set()
+        for row in data_list:
+            keys.update(row.keys())
+        fieldnames = sorted(list(keys))
+        
     output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer = csv.DictWriter(output, fieldnames=fieldnames, extrasaction='ignore')
     writer.writeheader()
     for row in data_list:
-        # Filter keys to match fieldnames
-        filtered_row = {k: v for k, v in row.items() if k in fieldnames}
-        writer.writerow(filtered_row)
+        writer.writerow(row)
     return output.getvalue()
 
 def generate_txt_individual(details):
@@ -23,7 +32,7 @@ def generate_txt_individual(details):
     
     report = []
     report.append("======================================================================")
-    report.append("          MALICIOUS IP INTELLIGENCE SYSTEM - SECURITY AUDIT REPORT")
+    report.append("          CYBER BLACK THREAT INTEL PLATFORM - SECURITY AUDIT REPORT")
     report.append("======================================================================")
     report.append(f"Report Timestamp: {timestamp}")
     report.append(f"Target IP Address: {details['ip']}")
@@ -64,6 +73,15 @@ def generate_txt_individual(details):
         report.append(f"{idx}. [{rec['priority']} PRIORITY] - {rec['action']}")
         report.append(f"   Description: {rec['description']}")
         report.append("")
+    report.append("----------------------------------------------------------------------")
+    report.append("INVESTIGATION TIMELINE & ANALYSIS PROFILE")
+    report.append("----------------------------------------------------------------------")
+    report.append(f"Threat Feeds Scanned:    {details.get('sources_used', 'AbuseIPDB, VirusTotal, WHOIS')}")
+    report.append(f"Analyst Actions Logged:  {details.get('actions_taken', 'Lookup Completed')}")
+    report.append(f"Diagnostics Duration:    {details.get('duration_ms', 0)} ms")
+    report.append(f"Severity Classification: {details.get('severity', 'Low').upper()}")
+    report.append(f"Security Alert Tags:     {details.get('tags', 'None')}")
+    report.append(f"Incident Notes log:\n{details.get('notes', 'No observations recorded.')}")
     report.append("======================================================================")
     report.append("                     [SECURE CONSOLE REPORT LOG]")
     report.append("======================================================================")
@@ -78,7 +96,7 @@ def generate_txt_bulk(results, metadata, stats):
     
     report = []
     report.append("======================================================================")
-    report.append("          MALICIOUS IP INTELLIGENCE SYSTEM - BATCH INGESTION SUMMARY")
+    report.append("          CYBER BLACK THREAT INTEL PLATFORM - BATCH INGESTION SUMMARY")
     report.append("======================================================================")
     report.append(f"Report Timestamp: {timestamp}")
     report.append(f"Source Filename:  {metadata['filename']}")
@@ -135,7 +153,7 @@ def generate_html_print_individual(details):
     return f"""
     <html>
     <head>
-        <title>Malicious IP Intelligence System - Audit Report {details['ip']}</title>
+        <title>Cyber Black Threat Intel Platform - Audit Report {details['ip']}</title>
         <style>
             body {{ font-family: Arial, sans-serif; line-height: 1.5; color: #111; padding: 40px; background: #fff; }}
             .header {{ text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }}
@@ -160,8 +178,8 @@ def generate_html_print_individual(details):
     </script>
 
         <div class="header">
-            <h1 style="margin: 0; font-size: 1.8em;">MALICIOUS IP INTELLIGENCE SYSTEM</h1>
-            <p style="margin: 5px 0 0 0; color: #555; font-size: 0.95em;">Threat Intelligence and IP Reputation Analysis Platform</p>
+            <h1 style="margin: 0; font-size: 1.8em;">CYBER BLACK THREAT INTEL PLATFORM</h1>
+            <p style="margin: 5px 0 0 0; color: #555; font-size: 0.95em;">AI-Powered Threat Intelligence & Security Investigation Platform</p>
             <p style="margin: 5px 0 0 0; font-size: 0.85em; color: #888;">Generated: {timestamp}</p>
         </div>
         
@@ -215,6 +233,29 @@ def generate_html_print_individual(details):
             <div class="section-title">Action Remediation Playbook</div>
             {rec_html}
         </div>
+        
+        <div class="section">
+            <div class="section-title">Investigation Timeline & Profile</div>
+            <div class="grid">
+                <div class="field"><span class="label">Feeds Queried:</span> <span class="value">{details.get('sources_used', 'AbuseIPDB, VirusTotal, WHOIS')}</span></div>
+                <div class="field"><span class="label">Actions Taken:</span> <span class="value">{details.get('actions_taken', 'Lookup Completed')}</span></div>
+                <div class="field"><span class="label">Scan Duration:</span> <span class="value">{details.get('duration_ms', 0)} ms</span></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Analyst Notes & Incident Observations</div>
+            <div class="grid">
+                <div class="field"><span class="label">Severity Rating:</span> <span class="value" style="color: #ff0055; font-weight: bold;">{details.get('severity', 'Low').upper()}</span></div>
+                <div class="field"><span class="label">Classification Tags:</span> <span class="value">{details.get('tags', 'None')}</span></div>
+                <div class="col-full" style="margin-top: 8px; grid-column: span 2;">
+                    <span class="label">Observations Log:</span>
+                    <div style="background: #fafafa; border: 1px solid #eee; padding: 12px; margin-top: 4px; font-style: italic; white-space: pre-wrap;">
+                        {details.get('notes') if details.get('notes') else 'No observation log recorded.'}
+                    </div>
+                </div>
+            </div>
+        </div>
     </body>
     </html>
     """
@@ -240,7 +281,7 @@ def generate_html_print_bulk(results, metadata, stats):
     return f"""
     <html>
     <head>
-        <title>Malicious IP Intelligence System - Bulk Audit Report</title>
+        <title>Cyber Black Threat Intel Platform - Bulk Audit Report</title>
         <style>
             body {{ font-family: Arial, sans-serif; line-height: 1.5; color: #111; padding: 40px; background: #fff; }}
             .header {{ text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }}
@@ -263,8 +304,8 @@ def generate_html_print_bulk(results, metadata, stats):
         }};
     </script>
         <div class="header">
-            <h1 style="margin: 0; font-size: 1.8em;">MALICIOUS IP INTELLIGENCE SYSTEM</h1>
-            <p style="margin: 5px 0 0 0; color: #555; font-size: 0.95em;">Malicious IP Intelligence System - Bulk Diagnostic Audit</p>
+            <h1 style="margin: 0; font-size: 1.8em;">CYBER BLACK THREAT INTEL PLATFORM</h1>
+            <p style="margin: 5px 0 0 0; color: #555; font-size: 0.95em;">AI-Powered Threat Intelligence & Security Investigation Platform - Bulk Diagnostic Audit</p>
             <p style="margin: 5px 0 0 0; font-size: 0.85em; color: #888;">Generated: {timestamp} | File Source: {metadata['filename']}</p>
         </div>
         
@@ -330,7 +371,7 @@ def generate_txt_watchlist(watchlist_data):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     report = []
     report.append("======================================================================")
-    report.append("          MALICIOUS IP INTELLIGENCE SYSTEM - WATCHLIST AUDIT")
+    report.append("          CYBER BLACK THREAT INTEL PLATFORM - WATCHLIST AUDIT")
     report.append("======================================================================")
     report.append(f"Report Timestamp: {timestamp}")
     report.append(f"Total Watchlist Entries: {len(watchlist_data)}")
@@ -355,7 +396,7 @@ def generate_txt_history(history_data):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     report = []
     report.append("======================================================================")
-    report.append("          MALICIOUS IP INTELLIGENCE SYSTEM - HISTORY AUDIT")
+    report.append("          CYBER BLACK THREAT INTEL PLATFORM - HISTORY AUDIT")
     report.append("======================================================================")
     report.append(f"Report Timestamp: {timestamp}")
     report.append(f"Total Investigations: {len(history_data)}")
