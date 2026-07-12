@@ -1,24 +1,28 @@
-<div align="center">
-
 # 🛡️ Cyber Black Threat Intel Platform (CBTIP)
 
 ### AI-Powered Threat Intelligence & Security Investigation Platform
 
-A modern, cloud-powered cybersecurity platform for **real-time IP reputation analysis, threat intelligence, AI-assisted security investigation, and professional security reporting**.
+> A modern, cloud-powered cybersecurity platform for **real-time IP reputation analysis, threat intelligence, AI-assisted security investigation, and professional security reporting.**
 
 ---
 
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Flask](https://img.shields.io/badge/Flask-3.x-000000?style=for-the-badge&logo=flask&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
-![Gemini AI](https://img.shields.io/badge/Gemini-AI-4285F4?style=for-the-badge&logo=google&logoColor=white)
-![VirusTotal](https://img.shields.io/badge/VirusTotal-API-394EFF?style=for-the-badge)
-![AbuseIPDB](https://img.shields.io/badge/AbuseIPDB-API-E53935?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
+<p align="center">
 
-**🚀 Cloud Powered • 🤖 AI Assisted • 🛡️ Threat Intelligence • 📊 Security Analytics**
+<img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+<img src="https://img.shields.io/badge/Flask-3.x-000000?style=for-the-badge&logo=flask&logoColor=white" />
+<img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" />
+<img src="https://img.shields.io/badge/Gemini-AI-4285F4?style=for-the-badge&logo=google&logoColor=white" />
+<img src="https://img.shields.io/badge/VirusTotal-API-394EFF?style=for-the-badge" />
+<img src="https://img.shields.io/badge/AbuseIPDB-API-E53935?style=for-the-badge" />
+<img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" />
 
-</div>
+</p>
+
+<p align="center">
+
+🚀 Cloud Powered • 🤖 AI Assisted • 🛡️ Threat Intelligence • 📊 Security Analytics
+
+</p>
 
 ---
 
