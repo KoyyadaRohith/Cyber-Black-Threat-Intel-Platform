@@ -1,748 +1,682 @@
+<div align="center">
+
 # 🛡️ Cyber Black Threat Intel Platform (CBTIP)
 
 ### AI-Powered Threat Intelligence & Security Investigation Platform
 
----
-
-The **Cyber Black Threat Intel Platform (CBTIP)** is a full-stack, web-based threat intelligence platform built for **security analysts**, **SOC engineers**, **system administrators**, and **network operations teams**. It provides real-time and mock IP reputation analysis, multi-vendor threat aggregation, automated risk classification, bulk log ingestion, watchlist surveillance, and exportable incident audit reports — all through a modern glassmorphism dark-themed dashboard.
-
-The platform integrates with three major threat intelligence APIs — **AbuseIPDB**, **VirusTotal v3**, and **ip-api.com** (WHOIS/GeoLocation) — and includes a fully functional **mock engine** that generates deterministic, realistic threat intelligence data without requiring any API credentials, making it immediately runnable out of the box.
+A modern, cloud-powered cybersecurity platform for **real-time IP reputation analysis, threat intelligence, AI-assisted security investigation, and professional security reporting**.
 
 ---
 
-## 📑 Table of Contents
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-3.x-000000?style=for-the-badge&logo=flask&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Gemini AI](https://img.shields.io/badge/Gemini-AI-4285F4?style=for-the-badge&logo=google&logoColor=white)
+![VirusTotal](https://img.shields.io/badge/VirusTotal-API-394EFF?style=for-the-badge)
+![AbuseIPDB](https://img.shields.io/badge/AbuseIPDB-API-E53935?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 
-- [Key Features](#-key-features)
-- [Technology Stack & Architecture](#-technology-stack--architecture)
-- [System Architecture Diagram](#-system-architecture-diagram)
-- [Setting Up & Running Locally](#-setting-up--running-locally)
-- [Environment Variables Configuration](#-environment-variables-configuration)
-- [Dual Engine Modes](#-dual-engine-modes-mock-vs-live)
-- [Platform Pages & Modules](#-platform-pages--modules)
-- [API Integrations Deep Dive](#-api-integrations-deep-dive)
-- [Risk Scoring Algorithm](#-risk-scoring-algorithm)
-- [Threat Classification Thresholds](#-threat-classification-thresholds)
-- [Remediation Playbook Engine](#-remediation-playbook-engine)
-- [Bulk File Ingestion Pipeline](#-bulk-file-ingestion-pipeline)
-- [Report Generation & Export Formats](#-report-generation--export-formats)
-- [Database Schema](#-database-schema)
-- [Authentication & Session Management](#-authentication--session-management)
-- [Google OAuth 2.0 Integration](#-google-oauth-20-integration)
-- [Directory Structure](#-directory-structure)
-- [Testing](#-testing)
-- [Security Analyst Test Profiles (Mock Mode)](#-security-analyst-test-profiles-mock-mode)
-- [Screenshots & UI Overview](#-screenshots--ui-overview)
-- [Future Enhancements](#-future-enhancements)
-- [License](#-license)
+**🚀 Cloud Powered • 🤖 AI Assisted • 🛡️ Threat Intelligence • 📊 Security Analytics**
+
+</div>
 
 ---
 
-## 🌟 Key Features
+# 📖 Overview
 
-| Feature | Description |
-|---|---|
-| **Individual IP Investigation** | Inspect threat metrics, GeoLocation profiles, ISP details, ASN information, security tags, abuse confidence ratios, and receive tailored remediation recommendations. |
-| **Bulk File Ingestion** | Upload CSV, TXT, or raw firewall log files. The regex engine extracts all IPv4 addresses, deduplicates them, runs parallel AJAX-streamed analysis queries, and generates aggregate batch reports. |
-| **Watchlist & Surveillance** | Tag high-risk IP assets to a persistent watchlist with automated threshold-based auto-tagging. Export watchlist registers as CSV. |
-| **Historical Auditing** | Every manual and bulk investigation is permanently archived in a searchable investigation history log with full metadata. |
-| **Threat Analytics Dashboard** | Real-time interactive analytics powered by Chart.js — 7-day scan trend lines, threat classification doughnut charts, and recent activity feeds. |
-| **Multi-Format Report Export** | Download incident audit reports as Plaintext (TXT), raw spreadsheet registers (CSV), or print-optimized HTML layouts (Save-as-PDF). |
-| **Dual Engine Modes** | Toggle between **Mock Mode** (deterministic test data) and **Live Mode** (real-time API queries) from the Settings panel. |
-| **Google OAuth 2.0** | Supports Google Sign-In with both real OAuth 2.0 flows and a built-in mock consent screen for local development. |
-| **User Profile Management** | Full profile editing, avatar upload, role assignment, and organization tagging. |
-| **In-App Notification System** | Session-based notification center tracking investigation events, watchlist actions, and system changes. |
-| **Responsive Design** | Fully responsive layout with mobile viewport overrides, media print CSS for report generation, and collapsible sidebar navigation. |
-| **Auto-Watchlist Automation** | Configurable risk score threshold that automatically adds high-risk IPs to the watchlist during investigation. |
+**Cyber Black Threat Intel Platform (CBTIP)** is a modern web-based cybersecurity platform developed to streamline **IP reputation analysis, cyber threat investigation, security analytics, and AI-assisted threat intelligence** through a centralized and intuitive interface.
+
+The platform aggregates threat intelligence from multiple trusted security sources, enabling analysts to investigate suspicious IP addresses, monitor security events, generate professional investigation reports, and gain AI-powered insights for improved decision-making.
+
+Designed with a scalable architecture powered by **Flask**, **Supabase PostgreSQL**, and **Google Gemini AI**, CBTIP combines cloud technologies with cybersecurity workflows to deliver an efficient investigation platform suitable for learning, portfolio demonstration, and future enterprise expansion.
 
 ---
 
-## 🛠️ Technology Stack & Architecture
+# 🎯 Project Objectives
 
-| Layer | Technology |
-|---|---|
-| **Backend Framework** | Python 3.8+ with Flask 3.0.3 micro-framework |
-| **Templating Engine** | Jinja2 (server-side HTML rendering) |
-| **Database** | Flat-file CSV databases with thread-safe retry-based I/O locking |
-| **API Client** | Python `requests` 2.31.0 library with timeout/fallback handling |
-| **Environment Config** | `python-dotenv` 1.0.1 for `.env` credential management |
-| **Frontend Styling** | Vanilla CSS with glassmorphism panels, custom CSS variables, dark theme, and micro-animations |
-| **Charts & Visualization** | Chart.js for interactive line and doughnut chart rendering |
-| **JavaScript** | Vanilla JS for clipboard hooks, mobile hamburger navigation, table sorting/filtering, drag-and-drop file upload, and AJAX streaming |
-| **Authentication** | Session-based auth with SHA-256 password hashing + Google OAuth 2.0 (real & mock flows) |
-| **Threat Intelligence APIs** | AbuseIPDB API v2, VirusTotal API v3, ip-api.com (WHOIS/Geo) |
+The primary objectives of Cyber Black Threat Intel Platform are to:
+
+- 🛡️ Investigate IP reputation using multiple threat intelligence providers.
+- 🌐 Centralize cyber threat investigation into a single dashboard.
+- 📊 Visualize investigation history and security analytics.
+- 🤖 Enhance investigations using AI-generated threat summaries and recommendations.
+- 📁 Manage historical investigations and watchlists efficiently.
+- 📄 Generate professional investigation reports.
+- ☁️ Utilize a secure cloud-hosted PostgreSQL database through Supabase.
+- 🚀 Provide a scalable foundation for future cybersecurity products within the Cyber Black World (CBW) ecosystem.
 
 ---
 
-## 🏗️ System Architecture Diagram
+# ⭐ Key Highlights
 
+- 🛡️ AI-Powered Threat Intelligence Platform
+- 🌐 Multi-Source IP Reputation Analysis
+- ☁️ Cloud-Native Architecture using Supabase
+- 🤖 AI-Assisted Threat Investigation
+- 📊 Interactive Dashboard & Analytics
+- 🔍 Real-Time Threat Intelligence
+- 📈 Investigation History & Timeline
+- 🚨 Watchlist Management
+- 📄 Professional Report Generation
+- 🔐 Secure Authentication & User Management
+- ⚡ Fast, Modern & Responsive User Interface
+- 🚀 Modular Architecture for Future Expansion
+
+---
+
+# ✨ Core Features
+
+## 🔍 Threat Investigation
+
+- Real-Time IP Reputation Analysis
+- Individual IP Investigation
+- Bulk IP Investigation
+- AI-Assisted Threat Analysis
+- Threat Classification Engine
+- Investigation Timeline
+- Investigation History
+- Investigation Notes & Severity
+- Threat Recommendations
+
+---
+
+## 🌐 Threat Intelligence
+
+CBTIP combines information from multiple trusted intelligence providers.
+
+### Supported Integrations
+
+- 🛡️ AbuseIPDB
+- 🦠 VirusTotal
+- 🌍 WHOIS & IP Geolocation
+- 🤖 Google Gemini AI
+
+The platform intelligently correlates data from these services to generate comprehensive threat intelligence results.
+
+---
+
+## 🤖 AI Intelligence Layer
+
+The integrated AI Intelligence Layer enhances investigations by automatically generating:
+
+- 🧠 Executive Threat Summaries
+- 📌 Indicators of Compromise (IOC) Explanations
+- ⚠️ Risk Assessments
+- 💡 Security Recommendations
+- 📊 Dashboard Insights
+- 📝 AI-Assisted Investigation Reports
+
+> **Note:** AI-generated analysis should always be reviewed before taking security actions.
+
+---
+
+## 📊 Dashboard & Analytics
+
+The interactive dashboard provides valuable operational insights including:
+
+- Total Investigations
+- Safe IP Statistics
+- Low Risk IP Statistics
+- Suspicious IP Statistics
+- High Risk IP Statistics
+- Malicious IP Statistics
+- Investigation Trends
+- Top Threat Countries
+- Top Autonomous Systems (ASN)
+- Watchlist Overview
+- Recent Investigation Activity
+
+---
+
+## 📁 Investigation Management
+
+Organize and manage security investigations efficiently with:
+
+- Investigation History
+- Timeline Tracking
+- Analyst Notes
+- Tags & Severity Levels
+- Watchlist Management
+- Threat Classification
+- Investigation Search
+- AI Investigation Support
+
+---
+
+## 📄 Professional Reporting
+
+Generate comprehensive investigation reports in multiple formats.
+
+Supported formats:
+
+- 📑 CSV Reports
+- 📄 TXT Reports
+- 🌐 HTML Reports
+- 🖨️ Print-Friendly Reports
+
+Each report includes investigation details, threat intelligence, classifications, and analyst observations.
+
+---
+
+## 👤 User Management
+
+The platform includes secure account management features.
+
+- Secure Authentication
+- Google OAuth Login
+- User Profiles
+- Notification Center
+- Personal Settings
+- Session Management
+
+---
+
+# 🛠️ Technology Stack
+
+| Category | Technologies |
+|------------|--------------|
+| **Frontend** | HTML5, CSS3, JavaScript |
+| **Backend** | Python, Flask |
+| **Database** | Supabase PostgreSQL |
+| **Authentication** | Supabase Auth, Google OAuth |
+| **Artificial Intelligence** | Google Gemini AI |
+| **Threat Intelligence APIs** | AbuseIPDB, VirusTotal, WHOIS/IP Geolocation |
+| **Data Visualization** | Chart.js |
+| **Cloud Platform** | Supabase |
+| **Version Control** | Git & GitHub |
+
+---
+
+# 💡 Why Cyber Black Threat Intel Platform?
+
+Cyber Black Threat Intel Platform was developed to demonstrate how modern cybersecurity applications can integrate **cloud infrastructure**, **threat intelligence services**, **artificial intelligence**, and **interactive analytics** into a unified investigation platform.
+
+Rather than relying on a single data source, CBTIP aggregates intelligence from multiple providers, helping analysts perform more informed investigations while maintaining an intuitive and efficient workflow.
+
+The platform also serves as a strong foundation for future cybersecurity solutions within the **Cyber Black World (CBW)** ecosystem, emphasizing scalability, modularity, and continuous innovation.
+
+---
+
+# 🏗️ System Architecture
+
+Cyber Black Threat Intel Platform follows a modular, cloud-based architecture designed for scalability, maintainability, and secure threat investigation.
+
+```text
+                        ┌───────────────────────────┐
+                        │        End User           │
+                        └─────────────┬─────────────┘
+                                      │
+                                      ▼
+                        ┌───────────────────────────┐
+                        │      Web Interface        │
+                        │ HTML • CSS • JavaScript   │
+                        └─────────────┬─────────────┘
+                                      │
+                                      ▼
+                        ┌───────────────────────────┐
+                        │      Flask Backend        │
+                        │ Authentication • Routing  │
+                        │ Business Logic • APIs     │
+                        └─────────────┬─────────────┘
+                                      │
+             ┌────────────────────────┼────────────────────────┐
+             ▼                        ▼                        ▼
+ ┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐
+ │ Threat Intelligence│     │ AI Intelligence │      │ Supabase Cloud   │
+ │ AbuseIPDB         │     │ Google Gemini   │      │ PostgreSQL DB    │
+ │ VirusTotal        │     │ Threat Summary  │      │ Authentication   │
+ │ WHOIS Lookup      │     │ Recommendations │      │ Storage          │
+ └──────────────────┘      └──────────────────┘      └──────────────────┘
+                                      │
+                                      ▼
+                        ┌───────────────────────────┐
+                        │ Reports & Analytics       │
+                        │ Dashboard • History       │
+                        │ Watchlists • Exports      │
+                        └───────────────────────────┘
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        CLIENT BROWSER (UI LAYER)                        │
-│                                                                         │
-│   ┌──────────┐  ┌──────────┐  ┌────────────┐  ┌──────────┐            │
-│   │  Login   │  │Dashboard │  │ IP Invest. │  │ Reports  │  ...       │
-│   │ Register │  │Analytics │  │ File Upload│  │ Watchlist │            │
-│   └────┬─────┘  └────┬─────┘  └─────┬──────┘  └────┬─────┘            │
-│        │              │              │               │                  │
-│        └──────────────┴──────────────┴───────────────┘                  │
-│                              │  HTTP / AJAX                             │
-└──────────────────────────────┼──────────────────────────────────────────┘
-                               │
-┌──────────────────────────────┼──────────────────────────────────────────┐
-│                     FLASK APPLICATION SERVER                            │
-│                         (app.py — 1250 lines)                           │
-│                                                                         │
-│  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │  Route Controllers: login, register, dashboard, investigate,   │    │
-│  │  file_upload, analysis, results, watchlist, history, reports,  │    │
-│  │  settings, profile, Google OAuth, API endpoints                │    │
-│  └──────────────────────────┬──────────────────────────────────────┘    │
-│                              │                                          │
-│  ┌───────────────────────────┼──────────────────────────────────┐       │
-│  │              SERVICE LAYER (services/)                       │       │
-│  │                                                              │       │
-│  │  ┌───────────────┐  ┌────────────────┐  ┌────────────────┐  │       │
-│  │  │  abuseipdb.py │  │ virustotal.py  │  │ whois_lookup.py│  │       │
-│  │  │ (AbuseIPDB    │  │ (VirusTotal v3 │  │ (ip-api.com    │  │       │
-│  │  │  API + Mock)  │  │  API + Mock)   │  │  WHOIS + Mock) │  │       │
-│  │  └───────┬───────┘  └───────┬────────┘  └───────┬────────┘  │       │
-│  │          │                  │                    │           │       │
-│  │          └──────────────────┼────────────────────┘           │       │
-│  │                             │                                │       │
-│  │  ┌──────────────────────────▼──────────────────────────────┐ │       │
-│  │  │              RISK ENGINE PIPELINE                       │ │       │
-│  │  │                                                         │ │       │
-│  │  │  risk_scoring.py → threat_summary.py → recommendations │ │       │
-│  │  │    (Weighted      (Analyst-style      .py (Priority-   │ │       │
-│  │  │     Score)         Diagnosis)          based Playbook)  │ │       │
-│  │  └─────────────────────────────────────────────────────────┘ │       │
-│  │                                                              │       │
-│  │  ┌─────────────────────┐  ┌───────────────────────────────┐  │       │
-│  │  │  db_operations.py   │  │    report_generator.py        │  │       │
-│  │  │  (CSV CRUD + Schema │  │    (TXT / CSV / HTML Print    │  │       │
-│  │  │   Migration Engine) │  │     Export Formatters)         │  │       │
-│  │  └─────────────────────┘  └───────────────────────────────┘  │       │
-│  └──────────────────────────────────────────────────────────────┘       │
-│                                                                         │
-└──────────────────────────────┬──────────────────────────────────────────┘
-                               │
-┌──────────────────────────────┼──────────────────────────────────────────┐
-│                      DATA LAYER (database/)                             │
-│                                                                         │
-│  ┌──────────────────┐  ┌────────────────────────┐                      │
-│  │   users.csv      │  │ investigation_history   │                      │
-│  │ (User Accounts   │  │       .csv              │                      │
-│  │  & Credentials)  │  │ (Search Archive Logs)   │                      │
-│  └──────────────────┘  └────────────────────────┘                      │
-│  ┌──────────────────┐  ┌────────────────────────┐                      │
-│  │  watchlist.csv   │  │  malicious_ips.csv     │                      │
-│  │ (Active Watch    │  │ (High-Threat IP Cache  │                      │
-│  │  Registers)      │  │  & Reputation Index)   │                      │
-│  └──────────────────┘  └────────────────────────┘                      │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                   EXTERNAL THREAT INTELLIGENCE APIs                      │
-│                                                                         │
-│  ┌────────────────┐  ┌──────────────────┐  ┌──────────────────────┐    │
-│  │   AbuseIPDB    │  │   VirusTotal v3  │  │  ip-api.com (WHOIS) │    │
-│  │   API v2       │  │   IP Address API │  │  GeoLocation API    │    │
-│  │                │  │                  │  │                      │    │
-│  │ Abuse Score    │  │ AV Engine Scans  │  │ Country, City, ISP   │    │
-│  │ Report Count   │  │ Malicious Count  │  │ ASN, Coordinates     │    │
-│  │ ISP, Domain    │  │ Reputation Score │  │ Timezone, Region     │    │
-│  │ Usage Type     │  │ Tags, Network    │  │ Organization         │    │
-│  └────────────────┘  └──────────────────┘  └──────────────────────┘    │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
+
+---
+
+# 📂 Project Structure
+
+```text
+Cyber-Black-Threat-Intel-Platform/
+
+│
+├── app.py
+├── config.py
+├── requirements.txt
+├── schema.sql
+├── migrate_data.py
+├── README.md
+├── LICENSE
+├── .env
+│
+├── services/
+│   ├── ai_engine.py
+│   ├── ai_provider.py
+│   ├── ai_prompts.py
+│   ├── db_operations.py
+│   ├── report_generator.py
+│   ├── risk_scoring.py
+│   └── ...
+│
+├── templates/
+│
+├── static/
+│   ├── css/
+│   ├── js/
+│   ├── images/
+│   └── icons/
+│
+├── reports/
+│
+├── uploads/
+│
+└── database/
+    ├── migrations/
+    └── legacy_csv/
 ```
 
 ---
 
-## 🚀 Setting Up & Running Locally
+# ⚙️ Prerequisites
 
-### Prerequisites
+Before running the application, ensure the following software is installed:
 
-- **Python 3.8+** installed and accessible from the terminal
-- **pip** package manager
+- Python 3.10 or later
+- Git
+- Supabase Account
+- Google AI Studio Account (Gemini API)
+- AbuseIPDB API Key
+- VirusTotal API Key
 
-### Step 1 — Clone the Repository
+---
+
+# 🚀 Installation
+
+## Create a Virtual Environment
+
+### Windows
 
 ```bash
-git clone https://github.com/your-username/Malicious-IP-Intelligence-System.git
-cd Malicious-IP-Intelligence-System
-```
-
-### Step 2 — Create a Virtual Environment (Recommended)
-
-```bash
-# Windows
 python -m venv .venv
-.venv\Scripts\activate
+```
 
-# Linux / macOS
+```bash
+.venv\Scripts\activate
+```
+
+### Linux / macOS
+
+```bash
 python3 -m venv .venv
+```
+
+```bash
 source .venv/bin/activate
 ```
 
-### Step 3 — Install Dependencies
+---
+
+## 3. Install Required Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-The project requires only three Python packages:
+---
 
-| Package | Version | Purpose |
-|---|---|---|
-| `Flask` | 3.0.3 | Web framework for routing, templating, and session management |
-| `requests` | 2.31.0 | HTTP client for external API calls |
-| `python-dotenv` | 1.0.1 | Environment variable loading from `.env` file |
+# 🔐 Environment Variables
 
-### Step 4 — Run the Application
+Create a `.env` file in the project root.
+
+Example:
+
+```env
+SECRET_KEY=
+
+SUPABASE_URL=
+
+SUPABASE_ANON_KEY=
+
+SUPABASE_SERVICE_ROLE_KEY=
+
+ABUSEIPDB_API_KEY=
+
+VIRUSTOTAL_API_KEY=
+
+GEMINI_API_KEY=
+```
+
+> **Important:** Never commit your `.env` file or API keys to GitHub.
+
+---
+
+# ☁️ Supabase Configuration
+
+Create a new Supabase project.
+
+Execute the provided `schema.sql` inside the Supabase SQL Editor to initialize the database schema.
+
+Configure the following services:
+
+- PostgreSQL Database
+- Authentication
+- Row Level Security (RLS)
+- Storage (Optional)
+
+After creating your project, copy the following values into the `.env` file:
+
+- Project URL
+- Anonymous API Key
+- Service Role Key
+
+---
+
+# 🤖 Gemini AI Configuration
+
+Generate an API key from Google AI Studio.
+
+https://aistudio.google.com/
+
+Copy your API key and add it to the `.env` file.
+
+```env
+GEMINI_API_KEY=YOUR_API_KEY
+```
+
+CBTIP uses Gemini AI to generate:
+
+- Threat Summaries
+- IOC Explanations
+- Investigation Recommendations
+- AI Security Insights
+
+If the API key is unavailable, the platform gracefully falls back to deterministic rule-based analysis where applicable.
+
+---
+
+# 🌐 Threat Intelligence APIs
+
+The platform integrates multiple security intelligence providers.
+
+| Service | Purpose |
+|----------|---------|
+| AbuseIPDB | IP Abuse Reputation |
+| VirusTotal | Malware & Reputation Analysis |
+| WHOIS / IP Geolocation | Network & Ownership Information |
+| Google Gemini AI | AI-Assisted Threat Intelligence |
+
+---
+
+# ▶️ Running the Application
+
+Start the development server:
 
 ```bash
 python app.py
 ```
 
-The development server starts on **[http://localhost:5000](http://localhost:5000)**. Open this URL in your web browser to access the platform.
+Open your browser:
 
-> **Note:** The application runs in **Mock Mode by default** — no API keys required. You'll see realistic, deterministic threat intelligence data immediately.
-
----
-
-## 🔐 Environment Variables Configuration
-
-Create a `.env` file in the project root directory (a template is included). The following variables are supported:
-
-| Variable | Required | Description |
-|---|---|---|
-| `ABUSEIPDB_API_KEY` | No | Your AbuseIPDB v2 API key. Enables live abuse reputation queries. Get one free at [abuseipdb.com](https://www.abuseipdb.com/). |
-| `VIRUSTOTAL_API_KEY` | No | Your VirusTotal v3 API key. Enables live AV engine scanning. Get one free at [virustotal.com](https://www.virustotal.com/). |
-| `GOOGLE_OAUTH_CLIENT_ID` | No | Google OAuth 2.0 Client ID for real Google Sign-In. |
-| `GOOGLE_OAUTH_CLIENT_SECRET` | No | Google OAuth 2.0 Client Secret for real Google Sign-In. |
-| `SECRET_KEY` | No | Flask session encryption key. A default is provided if omitted. |
-| `PORT` | No | Server port number. Defaults to `5000`. |
-| `DEBUG` | No | Flask debug mode toggle. Defaults to `True`. |
-
-**Example `.env` file:**
-```env
-ABUSEIPDB_API_KEY=your_abuseipdb_key_here
-VIRUSTOTAL_API_KEY=your_virustotal_key_here
-
-GOOGLE_OAUTH_CLIENT_ID=
-GOOGLE_OAUTH_CLIENT_SECRET=
-
-SECRET_KEY=your-custom-secret-key
-PORT=5000
-DEBUG=True
+```text
+http://127.0.0.1:5000
 ```
 
 ---
 
-## 🔄 Dual Engine Modes (Mock vs Live)
+# 📊 Platform Modules
 
-The platform supports two operational modes, toggled from the **Settings** panel:
+The application is organized into modular components.
 
-### Mock Mode (Default)
-
-- **No API keys required** — the system is immediately functional.
-- Generates **deterministic, realistic threat intelligence** using MD5-hash-based seeding of the target IP, ensuring the same IP always produces the same mock data.
-- Simulates AbuseIPDB abuse scores, VirusTotal AV detections, WHOIS geolocation data, security tags, ISP profiles, and more.
-- Risk distribution: ~50% Safe, ~30% Suspicious, ~20% Malicious based on the IP's hash.
-
-### Live Mode
-
-- Requires valid **AbuseIPDB** and/or **VirusTotal** API keys entered in the Settings panel or configured in `.env`.
-- Queries **real-time threat intelligence** from external API endpoints.
-- WHOIS/GeoLocation data is always fetched live from `ip-api.com` (free tier, 45 queries/minute).
-- If an API call fails, the system gracefully falls back to mock data for that vendor.
+| Module | Description |
+|----------|-------------|
+| 🔍 Threat Investigation | Analyze IP reputation using multiple threat intelligence providers |
+| 📊 Dashboard | Interactive analytics and investigation statistics |
+| 📂 Investigation History | Review previous investigations |
+| 🚨 Watchlists | Track suspicious or malicious IP addresses |
+| 🤖 AI Intelligence | Generate AI-assisted investigation insights |
+| 👤 User Management | Authentication, profiles and settings |
+| 📄 Reporting | Export investigation reports in multiple formats |
+| 🔔 Notifications | System notifications and updates |
 
 ---
 
-## 📄 Platform Pages & Modules
+# 🔒 Security Features
 
-The application includes **18 Jinja2 templates** organized across the following pages:
+Cyber Black Threat Intel Platform implements several security best practices.
 
-### Public Pages (No Authentication Required)
-
-| Page | Route | Template | Description |
-|---|---|---|---|
-| **Home / Landing** | `/` or `/home` | `home.html` | Public landing page with platform overview, live stats counters, and feature highlights. |
-| **Login** | `/login` | `login.html` | User authentication form with Google OAuth button and mock consent fallback. |
-| **Register** | `/register` | `register.html` | New analyst account registration with full name, email, mobile, and password fields. |
-| **Forgot Password** | `/forgot-password` | `forgot_password.html` | Password reset request form (simulated). |
-
-### Authenticated Pages (Login Required)
-
-| Page | Route | Template | Description |
-|---|---|---|---|
-| **Dashboard** | `/dashboard` | `dashboard.html` | Main control hub with stat widgets, 7-day scan trend chart, and recent activity feed. |
-| **Threat Analytics** | `/analytics` | `threat_analytics.html` | Detailed analytics with threat breakdown doughnut chart, trend lines, and scan history table. |
-| **IP Investigation** | `/investigate` | `ip_investigation.html` | Core investigation console — enter an IP to receive full threat profile, risk score gauge, abuse data, VT detections, WHOIS info, threat summary, and remediation playbook. |
-| **File Upload** | `/file-upload` | `file_upload.html` | Drag-and-drop file upload interface for bulk CSV/TXT/LOG ingestion. |
-| **Analysis Pipeline** | `/analysis` | `analysis.html` | Real-time AJAX-streamed bulk analysis progress view with per-IP status updates. |
-| **Batch Results** | `/results` | `results.html` | Aggregated batch results console with threat breakdown stats and sortable results table. |
-| **Watchlist** | `/watchlist` | `watchlist.html` | Persistent watchlist table with add/remove operations and CSV export. |
-| **History** | `/history` | `history.html` | Full searchable investigation history archive sorted by date descending. |
-| **Reports** | `/reports` | `reports.html` | Report gallery listing individual IP reports and bulk batch audit cards with download options. |
-| **Profile** | `/profile` | `profile.html` | User profile management — edit name, username, email, location, role, organization, bio, and avatar. |
-| **Settings** | `/settings` | `settings.html` | System configuration panel — API key management, mock/live mode toggle, auto-watchlist threshold, notification preferences, and system info display. |
-
-### Special Pages
-
-| Page | Template | Description |
-|---|---|---|
-| **Google Mock Consent** | `google_mock_consent.html` | Simulated Google OAuth consent screen for local development without real OAuth credentials. |
-| **Base Layout** | `base.html` | Minimal base template for public pages. |
-| **Authenticated Base** | `base_auth.html` | Full dashboard layout with sidebar navigation, notification bell, user avatar, and breadcrumbs. |
+- 🔐 Secure Authentication
+- ☁️ Supabase Authentication
+- 🛡️ Row Level Security (RLS)
+- 🔑 Environment Variable Protection
+- 📜 Secure Session Management
+- 🌐 Protected API Integration
+- ⚠️ Input Validation
+- 📊 Investigation Logging
+- 🚫 Secure Error Handling
+- 🔒 Password Encryption
 
 ---
 
-## 🌐 API Integrations Deep Dive
+# ⚡ Performance Optimizations
 
-### 1. AbuseIPDB API v2 (`services/abuseipdb.py`)
+To provide a smooth investigation experience, CBTIP includes several optimizations.
 
-- **Endpoint**: `https://api.abuseipdb.com/api/v2/check`
-- **Method**: GET with API key header authentication
-- **Parameters**: IP address, 90-day lookback window, verbose mode
-- **Data Returned**: Abuse confidence score (0–100%), total abuse reports, last reported timestamp, country, ISP, domain, usage type
-- **Fallback**: On API failure or missing key, returns deterministic mock data seeded by IP hash
-
-### 2. VirusTotal API v3 (`services/virustotal.py`)
-
-- **Endpoint**: `https://www.virustotal.com/api/v3/ip_addresses/{ip}`
-- **Method**: GET with `x-apikey` header authentication
-- **Data Returned**: Malicious/suspicious/harmless/undetected engine counts, reputation score, security tags (botnet, malware, C2, etc.), network CIDR, ASN
-- **Fallback**: On API failure or missing key, returns deterministic mock data seeded by IP hash
-
-### 3. ip-api.com WHOIS/GeoLocation (`services/whois_lookup.py`)
-
-- **Endpoint**: `http://ip-api.com/json/{ip}`
-- **Method**: GET (no authentication — free tier)
-- **Rate Limit**: 45 queries per minute
-- **Data Returned**: Country, country code, region, city, ISP, organization, ASN, latitude/longitude, timezone
-- **Fallback**: On API failure, returns deterministic mock WHOIS data seeded by IP hash
+- Parallel API Requests
+- AI Response Caching
+- Optimized Database Queries
+- Efficient Report Generation
+- Cloud Database Integration
+- Lightweight Frontend Rendering
+- Responsive Dashboard Components
+- Modular Service Architecture
 
 ---
 
-## 📊 Risk Scoring Algorithm
+# 🎯 Use Cases
 
-The risk score engine (`services/risk_scoring.py`) computes an **aggregate weighted threat score from 0 to 100** using data from all three API vendors:
+Cyber Black Threat Intel Platform (CBTIP) is designed to support a wide range of cybersecurity learning, research, and investigation scenarios.
 
-```
-Final Score = Abuse Contribution (50%) + VirusTotal Contribution (35%) + Profile Contribution (15%)
-```
+### 🛡️ Threat Intelligence Analysis
+- Investigate suspicious IP addresses
+- Analyze IP reputation from multiple intelligence providers
+- Identify malicious infrastructure
+- Perform threat correlation
 
-### Weight Breakdown
+### 🔍 Security Investigation
+- Conduct manual IP investigations
+- Review historical investigation records
+- Track investigation timelines
+- Document analyst observations
 
-| Component | Weight | Source | Calculation |
-|---|---|---|---|
-| **Abuse Confidence** | 50% | AbuseIPDB `abuse_score` (0–100) | `abuse_score × 0.50` |
-| **AV Detection Ratio** | 35% | VirusTotal `malicious / total_engines` | `(malicious ÷ total_engines × 100) × 0.35` (capped at 35) |
-| **Hosting Profile** | 15% | AbuseIPDB `usage_type` + VT `tags` | +8 pts if Data Center/Hosting; +7 pts if VPN/Proxy/Tor/Anonymous tags detected |
+### 🚨 Security Operations (SOC)
+- Support SOC analyst workflows
+- Perform initial threat triage
+- Review threat classifications
+- Monitor watchlisted IP addresses
 
-### Score Bounds
+### 🌐 Network Security
+- Investigate unknown network traffic
+- Validate suspicious external connections
+- Analyze network ownership and ASN information
 
-- Final score is clamped between **0** and **100**
-- The algorithm returns both the numeric score and the classification label
+### 🎓 Learning & Research
+- Learn cybersecurity investigation workflows
+- Understand threat intelligence concepts
+- Explore API integrations
+- Practice investigation techniques
 
----
-
-## 🏷️ Threat Classification Thresholds
-
-| Score Range | Classification | Color Code | Description |
-|---|---|---|---|
-| **0 – 20** | 🟢 **Safe** | Green | No threat indicators. Normal operations permitted. |
-| **21 – 60** | 🟡 **Suspicious** | Yellow/Amber | Moderate risk signals. Monitoring recommended. |
-| **61 – 100** | 🔴 **Malicious** | Red | Severe threat confirmed. Immediate isolation advised. |
-
----
-
-## 🔧 Remediation Playbook Engine
-
-The recommendation engine (`services/recommendations.py`) generates priority-tagged, action-oriented playbook items based on the threat classification:
-
-### Safe Classification
-| Priority | Action |
-|---|---|
-| Low | Allow Communication — Normal ingress/egress transit permitted |
-| Low | Standard Monitoring — Continue routine firewall log auditing |
-| Low | No Policy Changes — No firewall blacklistings required |
-
-### Suspicious Classification
-| Priority | Action |
-|---|---|
-| Medium | Monitor Port Connections — Log all TCP/UDP ports communicating with this IP |
-| Medium | Add to Active Watchlist — Monitor daily changes in threat scores |
-| Medium | Review Internal Traffic — Check for database/auth server connections from this host |
-
-### Malicious Classification
-| Priority | Action |
-|---|---|
-| High | Block IP Address — Apply immediate perimeter firewall block rules |
-| High | Apply Null Route (Null0) — Implement null route rules on primary routers |
-| High | Quarantine & Inspect Hosts — Audit local server logs for active shell sessions |
-| High | Escalate to Incident Response — File Severity 2/1 IR ticket for intrusion investigation |
+### 💼 Portfolio & Demonstration
+- Showcase full-stack development skills
+- Demonstrate cloud application architecture
+- Present cybersecurity concepts through practical implementation
+- Highlight AI-assisted security workflows
 
 ---
 
-## 📦 Bulk File Ingestion Pipeline
+# 🚀 Future Roadmap
 
-The bulk analysis workflow processes uploaded log files through the following stages:
+Cyber Black Threat Intel Platform is continuously evolving as part of the **Cyber Black World (CBW)** ecosystem.
 
-```
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐     ┌───────────────┐
-│  File Upload │────▶│ IP Extraction│────▶│ Deduplication   │────▶│ AJAX Parallel │
-│  (.csv/.txt/ │     │ (Regex IPv4) │     │ (Set-based      │     │ Analysis Loop │
-│   .log)      │     │              │     │  unique list)   │     │ (per-IP)      │
-└─────────────┘     └──────────────┘     └─────────────────┘     └───────┬───────┘
-                                                                         │
-                    ┌──────────────┐     ┌─────────────────┐             │
-                    │ Batch Report │◀────│ Results Console │◀────────────┘
-                    │ Export (CSV/  │     │ (Aggregated     │
-                    │  TXT/HTML)   │     │  Stats + Table) │
-                    └──────────────┘     └─────────────────┘
-```
+## ✅ Completed
 
-**Pipeline Details:**
-
-1. **File Upload**: Accepts `.csv`, `.txt`, and `.log` files via a drag-and-drop interface or file picker
-2. **IP Extraction**: Applies regex pattern `\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b` to extract all IPv4 addresses
-3. **Deduplication**: Removes duplicate IPs using Python set operations
-4. **AJAX Streaming**: Each unique IP is analyzed individually via the `/api/analyze-single` endpoint with real-time progress updates in the browser
-5. **Batch Tagging**: Results are tagged with a unique batch ID (`filename_YYYYMMDD_HHMMSS`) for audit trail tracking
-6. **Results Console**: Displays aggregate threat breakdown (safe/suspicious/malicious counts) with a sortable results table
-7. **Report Export**: Batch results can be downloaded as CSV, TXT, or print-optimized HTML
+- Cloud Database Migration (Supabase PostgreSQL)
+- Secure Authentication
+- Google OAuth Support
+- Real-Time Threat Intelligence
+- AI Intelligence Layer
+- Dashboard Analytics
+- Watchlist Management
+- Investigation History
+- Report Generation
+- Responsive User Interface
 
 ---
 
-## 📝 Report Generation & Export Formats
+## 🔜 Planned Features
 
-The report generator (`services/report_generator.py`) supports multiple export formats:
+### Version 1.1
 
-### Individual IP Reports
-| Format | Description |
-|---|---|
-| **HTML (Print/PDF)** | Print-optimized white-background layout that triggers `window.print()` on load. Includes threat summary, infrastructure profile, security feeds telemetry, and remediation playbook. Save as PDF via browser print dialog. |
-| **TXT** | Professional plaintext audit report with ASCII-formatted sections, formatted tables, and full diagnostic details. |
-
-### Bulk Batch Reports
-| Format | Description |
-|---|---|
-| **CSV** | Raw spreadsheet register with all investigation fields for import into SIEM tools or spreadsheets. |
-| **TXT** | Batch ingestion summary with aggregate threat statistics and an IP reputation directory table. |
-| **HTML (Print/PDF)** | Print-optimized bulk audit layout with metric boxes, remediation playbook summary, and full IP analysis table. |
-
-### Backup Exports
-| Export | Description |
-|---|---|
-| **History CSV/TXT** | Complete investigation history archive export. |
-| **Watchlist CSV/TXT** | Complete watchlist register export. |
+- Email Notifications
+- Investigation Filters
+- Improved Dashboard Analytics
+- Performance Enhancements
+- UI/UX Refinements
 
 ---
 
-## 🗄️ Database Schema
+### Version 2.0
 
-The application uses flat-file CSV databases with thread-safe retry-based I/O operations. The database layer (`services/db_operations.py`) includes automatic schema migration for backward compatibility.
-
-### `database/users.csv` — User Accounts Registry
-
-| Field | Type | Description |
-|---|---|---|
-| `username` | String | Unique login identifier (min 3 characters) |
-| `email` | String | Unique email address |
-| `password_hash` | String | SHA-256 hashed password |
-| `full_name` | String | Display name |
-| `mobile_number` | String | Contact number (optional) |
-| `location` | String | Geographic location (default: Hyderabad, Telangana, India) |
-| `created_at` | ISO 8601 | Account creation timestamp |
-| `bio` | String | User biography |
-| `role` | String | Job title (default: Threat Analyst) |
-| `organization` | String | Organization name |
-| `profile_photo_url` | String | Avatar URL (Google OAuth or uploaded) |
-| `provider` | String | Auth provider: `local` or `google` |
-| `account_created_date` | ISO 8601 | Duplicate of `created_at` for display purposes |
-
-### `database/investigation_history.csv` — Search Archive Logs
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | Integer | Auto-incrementing log ID |
-| `username` | String | Analyst who performed the search |
-| `ip` | String | Target IP address investigated |
-| `country` | String | GeoLocation country |
-| `isp` | String | Internet Service Provider |
-| `asn` | String | Autonomous System Number |
-| `risk_score` | Integer | Computed aggregate risk score (0–100) |
-| `classification` | Enum | `Safe`, `Suspicious`, or `Malicious` |
-| `threat_summary` | String | Full analyst-style threat diagnosis text |
-| `recommendations` | String | Semicolon-delimited remediation actions |
-| `abuse_score` | Integer | AbuseIPDB abuse confidence score |
-| `vt_detections` | Integer | VirusTotal malicious engine count |
-| `date` | ISO 8601 | Investigation timestamp |
-| `source` | String | `manual` for individual lookups; batch ID for bulk uploads |
-
-### `database/watchlist.csv` — Active Watch Registers
-
-| Field | Type | Description |
-|---|---|---|
-| `ip` | String | Watched IP address |
-| `username` | String | Analyst who added the entry |
-| `risk_score` | Integer | Risk score at time of watchlisting |
-| `classification` | Enum | Threat classification at time of watchlisting |
-| `date_added` | ISO 8601 | Watchlist entry creation timestamp |
-| `reason` | String | Reason for watchlisting (manual or auto-threshold) |
-| `status` | String | Entry status (default: `Active`) |
-
-### `database/malicious_ips.csv` — High-Threat Reputation Cache
-
-| Field | Type | Description |
-|---|---|---|
-| `ip` | String | Confirmed malicious IP address |
-| `risk_score` | Integer | Risk score at detection time |
-| `classification` | String | Always `Malicious` |
-| `last_detected` | ISO 8601 | Last detection timestamp (updates on re-scan) |
-| `reason` | String | Threat summary text |
+- IPv6 Investigation
+- Domain Reputation Analysis
+- URL Intelligence
+- File Hash Investigation
+- IOC Correlation Engine
+- Threat Feed Aggregation
 
 ---
 
-## 🔑 Authentication & Session Management
+### Future Vision
 
-### Local Authentication
-- **Registration**: Full name, username (min 3 chars), email, mobile number, password (min 6 chars), confirm password
-- **Password Security**: SHA-256 one-way hashing before storage
-- **Session Management**: Flask server-side sessions with encrypted cookies
-- **Login Decorator**: `@login_required` decorator protects all authenticated routes
-- **Session Variables**: `username`, `email`, `full_name`, `mobile_number`, `photo_url`, `settings`, `notifications`
-
-### Profile Management
-- Edit full name, username, email, location, role, organization, and bio
-- Upload custom avatar images (PNG, JPG, JPEG, GIF)
-- Username changes cascade automatically to history and watchlist records
-- Google OAuth users receive auto-generated usernames from their email prefix
+- Multi-Organization Workspaces
+- Role-Based Access Control (RBAC)
+- Team Collaboration
+- Enterprise Dashboard
+- REST API
+- SIEM Integration
+- Docker Deployment
+- Kubernetes Support
+- Cloud Deployment
+- Mobile Responsive Enhancements
 
 ---
 
-## 🔗 Google OAuth 2.0 Integration
+# 📈 Learning Outcomes
 
-The platform supports Google Sign-In through two pathways:
+Developing CBTIP provided practical experience in:
 
-### Real Google OAuth Flow
-1. User clicks **"Sign in with Google"** on the login page
-2. App redirects to Google's authorization endpoint with CSRF state token
-3. Google returns authorization code to `/login/google/callback`
-4. App exchanges code for access token, then fetches user profile from Google
-5. If email matches an existing account → log in. Otherwise → auto-register new account
-
-### Mock Google OAuth Flow (Local Development)
-1. When `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` are empty, the app redirects to a built-in mock consent page (`/login/google/mock-consent`)
-2. The mock consent screen lets you enter any name, email, and profile picture URL
-3. On submission, the app creates or logs in the user with those mock credentials
-4. This allows full OAuth flow testing without configuring real Google Cloud credentials
-
----
-
-## 📂 Directory Structure
-
-```
-Malicious-IP-Intelligence-System/
-│
-├── app.py                              # Core Flask application (1250 lines)
-│                                       # — Route controllers & middleware
-│                                       # — Session management & auth decorators
-│                                       # — Google OAuth 2.0 flow handlers
-│                                       # — API endpoints for AJAX bulk analysis
-│                                       # — Report download & export controllers
-│                                       # — Notification system helpers
-│                                       # — Context processors for global template vars
-│
-├── config.py                           # Application configuration
-│                                       # — Directory path registries (uploads, reports, exports)
-│                                       # — API credential loading from .env
-│                                       # — Google OAuth credential loading
-│                                       # — Server port & debug settings
-│                                       # — Auto-init folder creation on startup
-│
-├── requirements.txt                    # Python dependencies (Flask, requests, python-dotenv)
-├── test_pipeline.py                    # Automated test suite (4 test categories)
-├── .env                                # Environment variables (API keys, OAuth credentials)
-├── README.md                           # This documentation file
-│
-├── services/                           # Backend service modules
-│   ├── abuseipdb.py                    # AbuseIPDB API v2 client + mock data generator
-│   ├── virustotal.py                   # VirusTotal API v3 client + mock data generator
-│   ├── whois_lookup.py                 # ip-api.com WHOIS/Geo client + mock data generator
-│   ├── risk_scoring.py                 # Weighted multi-vendor risk score calculator
-│   ├── threat_summary.py              # Analyst-style threat diagnosis text generator
-│   ├── recommendations.py             # Priority-based remediation playbook engine
-│   ├── report_generator.py            # Multi-format report compiler (TXT, CSV, HTML Print)
-│   └── db_operations.py               # Flat-file CSV database CRUD operations
-│                                       # — Thread-safe read/write/append with retry logic
-│                                       # — Auto schema migration on startup
-│                                       # — User, History, Watchlist, Malicious IP management
-│
-├── templates/                          # Jinja2 HTML templates (18 files)
-│   ├── base.html                       # Minimal base layout for public pages
-│   ├── base_auth.html                  # Full dashboard layout (sidebar, navbar, notifications)
-│   ├── home.html                       # Public landing page with feature showcase
-│   ├── login.html                      # Login form with Google OAuth button
-│   ├── register.html                   # Registration form with validation
-│   ├── forgot_password.html            # Password reset request form
-│   ├── google_mock_consent.html        # Mock Google OAuth consent screen
-│   ├── dashboard.html                  # Main dashboard with stats & charts
-│   ├── threat_analytics.html           # Advanced analytics with trend visualization
-│   ├── ip_investigation.html           # IP investigation console with full threat profile
-│   ├── file_upload.html                # Drag-and-drop bulk file upload interface
-│   ├── analysis.html                   # Real-time bulk analysis progress view
-│   ├── results.html                    # Batch results aggregation console
-│   ├── watchlist.html                  # Watchlist management table
-│   ├── history.html                    # Investigation history archive
-│   ├── reports.html                    # Report gallery with download cards
-│   ├── profile.html                    # User profile editor with avatar upload
-│   └── settings.html                   # System configuration panel
-│
-├── static/                             # Static frontend assets
-│   ├── css/
-│   │   ├── style.css                   # Global design system (CSS variables, glass panels,
-│   │   │                               #   forms, buttons, animations, color scheme)
-│   │   ├── dashboard.css               # Dashboard-specific (sidebar nav, badges, widgets,
-│   │   │                               #   chart containers, activity feed cards)
-│   │   └── responsive.css              # Responsive breakpoints & media print overrides
-│   │
-│   ├── js/
-│   │   ├── main.js                     # Clipboard copy hooks, mobile hamburger toggle,
-│   │   │                               #   notification panel interactions
-│   │   ├── dashboard.js                # Table sorting, column filtering, search bindings
-│   │   ├── charts.js                   # Chart.js line & doughnut chart render functions
-│   │   └── upload.js                   # Drag/drop file handling, AJAX bulk analysis loop,
-│   │                                   #   progress bar animations, batch session saving
-│   │
-│   ├── img/
-│   │   ├── logo_shield.png             # Platform shield logo
-│   │   ├── holographic_globe.png       # Decorative holographic globe graphic
-│   │   └── cyber_hacker.png            # Landing page hero illustration
-│   │
-│   └── uploads/
-│       └── avatars/                    # User-uploaded profile avatars
-│
-├── database/                           # Flat-file CSV database storage
-│   ├── users.csv                       # User accounts & credentials
-│   ├── investigation_history.csv       # Complete search archive
-│   ├── watchlist.csv                   # Active watchlist entries
-│   └── malicious_ips.csv              # Cached high-threat IP reputation index
-│
-├── uploads/                            # Temporary uploaded file storage
-│   ├── csv/
-│   ├── txt/
-│   └── logs/
-│
-├── reports/                            # Generated report file cache
-│   ├── pdf/                            # HTML print-format reports
-│   ├── csv/                            # CSV export files
-│   └── txt/                            # Plaintext report files
-│
-└── exports/                            # Additional export storage
-    ├── generated_reports/
-    └── downloaded_files/
-```
+- Python Development
+- Flask Framework
+- Cloud Database Design
+- PostgreSQL
+- Supabase
+- Authentication Systems
+- REST API Integration
+- Artificial Intelligence Integration
+- Cybersecurity Concepts
+- Threat Intelligence
+- Report Generation
+- Frontend Development
+- Responsive UI Design
+- Version Control with Git & GitHub
 
 ---
 
-## 🧪 Testing
+# 🤝 Contributing
 
-The project includes an automated test suite (`test_pipeline.py`) that validates the four core subsystems:
+Contributions are welcome.
+
+If you would like to improve this project:
+
+1. Fork the repository
+2. Create a new feature branch
 
 ```bash
-python test_pipeline.py
+git checkout -b feature/your-feature
 ```
 
-### Test Categories
+3. Commit your changes
 
-| # | Test | What It Validates |
-|---|---|---|
-| 1 | **User Authentication** | Account registration, SHA-256 hashing, user retrieval, email/password verification |
-| 2 | **Threat Intelligence Pipeline** | Mock data generation, AbuseIPDB/VirusTotal/WHOIS integration, risk scoring accuracy, threat summary generation, recommendation output for Safe & Malicious IPs |
-| 3 | **Watchlist Operations** | Add to watchlist, verify presence (`is_in_watchlist`), remove from watchlist, verify deletion |
-| 4 | **Report Compilation** | TXT individual report generation (ISP name, IP presence checks), CSV report buffer generation (header/row validation) |
-
-**Expected Output:**
-```
-[*] COMMENCING SYSTEM TESTS FOR THREAT INTEL PLATFORM...
-----------------------------------------------------------------------
-[+] Test 1: User Account Registration & Hashing...
-    - Registration outcome: True (User registered successfully.)
-    - User account validation successful.
-[+] Test 2: IP Reputation Diagnostic Pipeline...
-    - Querying Safe target: 8.8.8.8...
-      * Risk score: X/100 | Class: Safe
-    - Querying Malicious target: 198.51.100.9...
-      * Risk score: X/100 | Class: Malicious
-    - Risk engine scores and classification mappings validated.
-[+] Test 3: Watchlist Registers Operations...
-    - Add watchlist: True (IP added to watchlist.)
-    - Remove watchlist: (True, 'IP removed from watchlist.')
-    - Watchlist CRUD operations successful.
-[+] Test 4: Security Incident Reports Export Compilation...
-    - TXT & CSV report buffers generated successfully.
-----------------------------------------------------------------------
-[SUCCESS] ALL SYSTEM TESTS COMPLETED SUCCESSFULLY! BASE SYSTEM 100% SOUND.
+```bash
+git commit -m "Add new feature"
 ```
 
----
+4. Push to GitHub
 
-## 🔒 Security Analyst Test Profiles (Mock Mode)
+```bash
+git push origin feature/your-feature
+```
 
-When running in **Mock Mode**, the risk score and threat classification are deterministic — computed from the MD5 hash of the target IP address. Use these benchmark IPs to verify risk scoring thresholds:
+5. Open a Pull Request
 
-| Test IP | Expected Classification | Expected Behavior |
-|---|---|---|
-| `8.8.8.8` | 🟢 **Safe** | Google DNS — Clean reputation, zero abuse reports, no VT detections, reputable ISP profile |
-| `198.51.100.12` | 🟡 **Suspicious** | Triggers warning flags — Moderate abuse score, low VT detections, proxy/crawler tags, hosting provider profile |
-| `203.0.113.50` | 🔴 **Malicious** | Severe threat level — High abuse confidence, multiple VT engine detections, C2/botnet tags, data center hosting, perimeter blocking remediation |
+Please ensure your code follows the existing project structure and coding standards.
 
 ---
 
-## 🖼️ Screenshots & UI Overview
+# 📌 Project Status
 
-The platform features a **dark-themed glassmorphism design** with:
+**Current Status**
 
-- 🎨 **Glass-effect panels** with backdrop blur and translucent borders
-- ✨ **Glowing accent effects** on interactive elements
-- 📊 **Interactive Chart.js visualizations** (line trends + doughnut breakdowns)
-- 🎯 **Custom risk score gauges** with animated color fills
-- 📱 **Fully responsive** layout from desktop to mobile viewports
-- 🖨️ **Print-optimized** report layouts with clean white backgrounds
-- 🔔 **Notification center** with timestamped activity events
+🟢 Active Development
+
+The project continues to receive improvements, performance optimizations, bug fixes, and new cybersecurity features as part of the Cyber Black World (CBW) ecosystem.
 
 ---
 
-## 🚧 Future Enhancements
+# 🙌 Acknowledgements
 
-- [ ] **IPv6 Support** — Extend the regex extraction engine and validation to support IPv6 addresses
-- [ ] **SQLite/PostgreSQL Migration** — Replace flat-file CSV databases with relational database for production scalability
-- [ ] **Real-Time Watchlist Monitoring** — Scheduled background re-scans of watchlisted IPs with change detection alerts
-- [ ] **Email Alert Integration** — SMTP-based email notifications when malicious IPs are detected
-- [ ] **SIEM Integration** — Syslog/CEF format export for integration with Splunk, ELK, or QRadar
-- [ ] **API Rate Limiting** — Token bucket rate limiting for bulk analysis endpoints
-- [ ] **Role-Based Access Control (RBAC)** — Admin, Analyst, and Viewer role hierarchies
-- [ ] **Geolocation Map Visualization** — Interactive world map plotting investigated IP locations
-- [ ] **Dark/Light Theme Toggle** — User-selectable theme preference
-- [ ] **Docker Containerization** — Dockerfile and docker-compose for one-command deployment
+Special thanks to the following platforms and services that made this project possible:
 
----
+- Google Gemini AI
+- Supabase
+- VirusTotal
+- AbuseIPDB
+- Flask
+- Python Community
+- Open Source Community
 
-## 📄 License
+```
 
-This project is developed as part of an academic internship program. All rights reserved.
+👨‍💻 Developed By
 
----
+Koyyada Rohith
 
-<p align="center">
-  <strong>🛡️ Cyber Black Threat Intel Platform (CBTIP)</strong><br>
-  <em>AI-Powered Threat Intelligence & Security Investigation Platform</em><br><br>
-  Built with Python · Flask · Chart.js · Vanilla CSS
-</p>
-]]>
+🔐 Cybersecurity Enthusiast | 🎓 B.Tech CSE | 🚀 Building Projects in Cybersecurity, Collaboration & Technology
+
+```
+
+📌 Version
+
+Version 1.0
+
+```
+
+## 📜 License
+
+This project is licensed under the MIT License. See the LICENSE file for details.
+
+```
+<div align="center">
+
+# 🛡️ Cyber Black Squad — Startup Workspace Platform
+
+### Startup Management & Collaboration Platform
+
+**Part of the Cyber Black World (CBW) Ecosystem**
+
+</div>
+
+```
