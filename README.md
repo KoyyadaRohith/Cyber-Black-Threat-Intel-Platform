@@ -1,12 +1,12 @@
+<div align="center">
+
 # 🛡️ Cyber Black Threat Intel Platform (CBTIP)
 
 ### AI-Powered Threat Intelligence & Security Investigation Platform
 
-> A modern, cloud-powered cybersecurity platform for **real-time IP reputation analysis, threat intelligence, AI-assisted security investigation, and professional security reporting.**
+A modern, cloud-powered cybersecurity platform for **real-time IP reputation analysis, threat intelligence, AI-assisted security investigation, and professional security reporting.**
 
----
-
-<p align="center">
+<br>
 
 <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" />
 <img src="https://img.shields.io/badge/Flask-3.x-000000?style=for-the-badge&logo=flask&logoColor=white" />
@@ -16,13 +16,11 @@
 <img src="https://img.shields.io/badge/AbuseIPDB-API-E53935?style=for-the-badge" />
 <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" />
 
-</p>
+<br><br>
 
-<p align="center">
+**🚀 Cloud Powered • 🤖 AI Assisted • 🛡️ Threat Intelligence • 📊 Security Analytics**
 
-🚀 Cloud Powered • 🤖 AI Assisted • 🛡️ Threat Intelligence • 📊 Security Analytics
-
-</p>
+</div>
 
 ---
 
