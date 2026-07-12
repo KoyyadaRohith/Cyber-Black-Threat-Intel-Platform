@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>🛡️ Cyber Black Threat Intel Platform (CBTIP)</h1>
+<h1><strong>🛡️ Cyber Black Threat Intel Platform (CBTIP)</strong></h1>
 
 <h3>AI-Powered Threat Intelligence & Security Investigation Platform</h3>
 
