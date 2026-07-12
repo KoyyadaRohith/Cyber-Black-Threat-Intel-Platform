@@ -163,7 +163,7 @@ Each report includes investigation details, threat intelligence, classifications
 The platform includes secure account management features.
 
 - Secure Authentication
-- Google OAuth Login
+- Google Sign-In (Coming Soon)
 - User Profiles
 - Notification Center
 - Personal Settings
@@ -525,7 +525,6 @@ Cyber Black Threat Intel Platform is continuously evolving as part of the **Cybe
 
 - Cloud Database Migration (Supabase PostgreSQL)
 - Secure Authentication
-- Google OAuth Support
 - Real-Time Threat Intelligence
 - AI Intelligence Layer
 - Dashboard Analytics
@@ -632,7 +631,16 @@ Please ensure your code follows the existing project structure and coding standa
 
 🟢 Active Development
 
-The project continues to receive improvements, performance optimizations, bug fixes, and new cybersecurity features as part of the Cyber Black World (CBW) ecosystem.
+🟢 Active Development
+
+Current Release:
+Version 1.0
+
+Status:
+Stable Development Build
+
+Next Planned Release:
+Version 1.1
 
 ---
 
@@ -648,7 +656,6 @@ Special thanks to the following platforms and services that made this project po
 - Python Community
 - Open Source Community
 
-```
 
 👨‍💻 Developed By
 
@@ -656,27 +663,12 @@ Koyyada Rohith
 
 🔐 Cybersecurity Enthusiast | 🎓 B.Tech CSE | 🚀 Building Projects in Cybersecurity, Collaboration & Technology
 
-```
 
 📌 Version
 
 Version 1.0
 
-```
 
 ## 📜 License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
-
-```
-<div align="center">
-
-# 🛡️ Cyber Black Squad — Startup Workspace Platform
-
-### Startup Management & Collaboration Platform
-
-**Part of the Cyber Black World (CBW) Ecosystem**
-
-</div>
-
-```
+This project is released under the MIT License. See the LICENSE file for complete license information.
