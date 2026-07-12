@@ -1,10 +1,12 @@
 <div align="center">
 
-# 🛡️ Cyber Black Threat Intel Platform (CBTIP)
+<h1>🛡️ Cyber Black Threat Intel Platform (CBTIP)</h1>
 
-### AI-Powered Threat Intelligence & Security Investigation Platform
+<h3>AI-Powered Threat Intelligence & Security Investigation Platform</h3>
 
-A modern, cloud-powered cybersecurity platform for **real-time IP reputation analysis, threat intelligence, AI-assisted security investigation, and professional security reporting.**
+<p>
+A modern, cloud-powered cybersecurity platform for <strong>real-time IP reputation analysis, threat intelligence, AI-assisted security investigation, and professional security reporting.</strong>
+</p>
 
 <br>
 
@@ -18,7 +20,7 @@ A modern, cloud-powered cybersecurity platform for **real-time IP reputation ana
 
 <br><br>
 
-**🚀 Cloud Powered • 🤖 AI Assisted • 🛡️ Threat Intelligence • 📊 Security Analytics**
+<strong>🚀 Cloud Powered • 🤖 AI Assisted • 🛡️ Threat Intelligence • 📊 Security Analytics</strong>
 
 </div>
 
