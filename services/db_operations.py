@@ -12,6 +12,45 @@ try:
 except ImportError:
     pass
 
+def _robust_insert(table_name, payload):
+    """Inserts a record into a table, automatically removing columns that don't exist in the schema."""
+    import re
+    while True:
+        try:
+            res = supabase.table(table_name).insert(payload).execute()
+            return True, res
+        except Exception as e:
+            err_msg = str(e)
+            if "PGRST204" in err_msg:
+                match = re.search(r"Could not find the '([^']+)' column", err_msg)
+                if match:
+                    failed_col = match.group(1)
+                    if failed_col in payload:
+                        print(f"[WARNING] Column '{failed_col}' not found in table '{table_name}'. Removing from payload and retrying.")
+                        del payload[failed_col]
+                        continue
+            return False, e
+
+def _robust_update(table_name, payload, row_id):
+    """Updates a record, automatically removing columns that don't exist in the schema."""
+    import re
+    while True:
+        try:
+            res = supabase.table(table_name).update(payload).eq('id', row_id).execute()
+            return True, res
+        except Exception as e:
+            err_msg = str(e)
+            if "PGRST204" in err_msg:
+                match = re.search(r"Could not find the '([^']+)' column", err_msg)
+                if match:
+                    failed_col = match.group(1)
+                    if failed_col in payload:
+                        print(f"[WARNING] Column '{failed_col}' not found in table '{table_name}'. Removing from payload and retrying.")
+                        del payload[failed_col]
+                        continue
+            return False, e
+
+
 def _get_user_uuid(username_or_email):
     """Retrieve UUID for a user by email, username, or checking if it's already a UUID (caching via flask session)."""
     if not supabase:
@@ -66,7 +105,7 @@ def _get_user_uuid(username_or_email):
 
 # --- User Management ---
 
-def add_user(username, email, password_hash, full_name=None, mobile_number=None, location=None, role=None, organization=None, profile_photo_url=None, provider=None, account_created_date=None):
+def add_user(username, email, password_hash, full_name=None, mobile_number=None, location=None, role=None, organization=None, profile_photo_url=None, provider=None, account_created_date=None, last_login=None):
     """Registers a user profile record in public.users. Auth record must be provisioned beforehand or on registration."""
     if not supabase:
         return False, "Database not configured."
@@ -79,11 +118,6 @@ def add_user(username, email, password_hash, full_name=None, mobile_number=None,
     except Exception as e:
         print(f"Error checking existing users: {e}")
 
-    # Provision user UUID. If provider is google, we might register without password.
-    # If password_hash is provided, we register this as password credential in auth.users.
-    user_uuid = None
-    
-    # Check if username or email matches an existing UUID from a recent signup
     user_uuid = _get_user_uuid(email) or _get_user_uuid(username)
     
     if not user_uuid:
@@ -102,55 +136,81 @@ def add_user(username, email, password_hash, full_name=None, mobile_number=None,
         except Exception as auth_err:
             return False, f"Auth provisioning failed: {auth_err}"
             
-    # Insert user details in public.users
-    try:
-        supabase.table('users').insert({
-            "id": user_uuid,
-            "username": username,
-            "email": email,
-            "password_hash": password_hash,
-            "full_name": full_name or username.title(),
-            "mobile_number": mobile_number or "",
-            "location": location or "Hyderabad, Telangana, India",
-            "bio": "",
-            "role": role or 'Threat Analyst',
-            "organization": organization or 'Cyber Black Threat Intel Platform',
-            "profile_photo_url": profile_photo_url or '',
-            "provider": provider or 'local',
-            "created_at": account_created_date or datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat()
-        }).execute()
-    except Exception as e:
-        err_msg = str(e)
-        if "password_hash" in err_msg or "PGRST204" in err_msg:
-            try:
-                print("[WARNING] password_hash column not found in public.users table. Inserting profile without password_hash.")
-                supabase.table('users').insert({
-                    "id": user_uuid,
-                    "username": username,
-                    "email": email,
-                    "full_name": full_name or username.title(),
-                    "mobile_number": mobile_number or "",
-                    "location": location or "Hyderabad, Telangana, India",
-                    "bio": "",
-                    "role": role or 'Threat Analyst',
-                    "organization": organization or 'Cyber Black Threat Intel Platform',
-                    "profile_photo_url": profile_photo_url or '',
-                    "provider": provider or 'local',
-                    "created_at": account_created_date or datetime.now().isoformat(),
-                    "updated_at": datetime.now().isoformat()
-                }).execute()
-            except Exception as fallback_err:
-                return False, f"Profile insertion failed: {fallback_err}"
-        else:
-            return False, f"Profile insertion failed: {e}"
-        
+    payload = {
+        "id": user_uuid,
+        "username": username,
+        "email": email,
+        "password_hash": password_hash,
+        "full_name": full_name or username.title(),
+        "mobile_number": mobile_number or "",
+        "location": location or "Hyderabad, Telangana, India",
+        "bio": "",
+        "role": role or 'Threat Analyst',
+        "organization": organization or 'Cyber Black Threat Intel Platform',
+        "profile_photo_url": profile_photo_url or '',
+        "avatar_url": profile_photo_url or '',
+        "provider": provider or 'local',
+        "created_at": account_created_date or datetime.now().isoformat(),
+        "updated_at": datetime.now().isoformat(),
+        "last_login": last_login or datetime.now().isoformat()
+    }
+    
+    success, res = _robust_insert('users', payload)
+    if success:
         # Initialize default settings record
         get_settings(username)
-        
         return True, "User registered successfully."
-    except Exception as db_err:
-        return False, f"Profile insertion failed: {db_err}"
+    else:
+        return False, f"Profile insertion failed: {res}"
+
+def sync_google_user_profile(user_uuid, email, full_name, avatar_url):
+    """Synchronizes Google profile info into the public.users database."""
+    if not supabase:
+        return False, "Database not configured."
+        
+    try:
+        # Check if profile already exists in public.users
+        res = supabase.table('users').select('*').eq('id', user_uuid).execute()
+    except Exception as e:
+        print(f"Error checking profile in sync_google_user_profile: {e}")
+        return False, f"Database check failed: {e}"
+    
+    payload = {
+        "email": email,
+        "full_name": full_name,
+        "profile_photo_url": avatar_url,
+        "avatar_url": avatar_url,
+        "provider": "google",
+        "last_login": datetime.now().isoformat(),
+        "updated_at": datetime.now().isoformat()
+    }
+    
+    if res.data:
+        # Profile exists, update it
+        success, update_res = _robust_update('users', payload, user_uuid)
+        return success
+    else:
+        # Profile does not exist, create it!
+        # First generate username
+        base_username = email.split('@')[0].replace('.', '_').replace('-', '_')
+        username = base_username
+        counter = 1
+        while get_user(username) is not None:
+            username = f"{base_username}_{counter}"
+            counter += 1
+            
+        payload["id"] = user_uuid
+        payload["username"] = username
+        payload["role"] = "Threat Analyst"
+        payload["organization"] = "Cyber Black Threat Intel Platform"
+        payload["location"] = "Hyderabad, Telangana, India"
+        payload["bio"] = ""
+        payload["created_at"] = datetime.now().isoformat()
+        
+        success, insert_res = _robust_insert('users', payload)
+        if success:
+            get_settings(username)
+        return success
 
 def get_user(username):
     """Retrieve user details by username."""

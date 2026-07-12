@@ -132,40 +132,15 @@
                 <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
             </div>
             
-            {% if Config.GOOGLE_CLIENT_ID %}
-                <!-- Load Google Identity Services Client Library -->
-                <script src="https://accounts.google.com/gsi/client" async defer></script>
-                
-                <!-- Google GSI Standard Button Container -->
-                <div style="display: flex; justify-content: center; width: 100%; margin-bottom: 10px;">
-                    <div id="g_id_onload"
-                         data-client_id="{{ Config.GOOGLE_CLIENT_ID }}"
-                         data-context="signup"
-                         data-ux_mode="popup"
-                         data-login_uri="{{ url_for('google_callback', _external=True) }}"
-                         data-auto_prompt="false">
-                    </div>
-                    <div class="g_id_signin"
-                         data-type="standard"
-                         data-shape="rectangular"
-                         data-theme="outline"
-                         data-text="signup_with"
-                         data-size="large"
-                         data-logo_alignment="left"
-                         data-width="360">
-                    </div>
-                </div>
-            {% else %}
-                <a href="{{ url_for('login_google') }}" class="btn btn-google" style="width: 100%; padding: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; border-radius: 8px; font-weight: 500; font-family: var(--font-sans); border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.03); color: var(--text-primary); transition: all 0.3s ease;">
-                    <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24">
-                        <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.68 1.54 14.98 1 12 1 7.35 1 3.37 3.68 1.48 7.58l3.87 3C6.27 7.59 8.91 5.04 12 5.04z"/>
-                        <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.29 1.48-1.14 2.73-2.42 3.58v2.97h3.91c2.28-2.1 3.54-5.19 3.54-8.7z"/>
-                        <path fill="#FBBC05" d="M5.35 10.58c-.24-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29L1.48 3C.53 4.91 0 7.05 0 9.29s.53 4.38 1.48 6.29l3.87-3z"/>
-                        <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.91-2.97c-1.12.75-2.55 1.2-4.05 1.2-3.09 0-5.73-2.55-6.65-5.54L1.48 15.7C3.37 19.62 7.35 22.3 12 22.3z"/>
-                    </svg>
-                    Google Account
-                </a>
-            {% endif %}
+            <a href="{{ url_for('coming_soon_google') }}" class="btn btn-google" style="width: 100%; padding: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; border-radius: 8px; font-weight: 500; font-family: var(--font-sans); border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.03); color: var(--text-primary); transition: all 0.3s ease;">
+                <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24">
+                    <path fill="#EA4335" d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.68 1.54 14.98 1 12 1 7.35 1 3.37 3.68 1.48 7.58l3.87 3C6.27 7.59 8.91 5.04 12 5.04z"/>
+                    <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.36H12v4.51h6.46c-.29 1.48-1.14 2.73-2.42 3.58v2.97h3.91c2.28-2.1 3.54-5.19 3.54-8.7z"/>
+                    <path fill="#FBBC05" d="M5.35 10.58c-.24-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29L1.48 3C.53 4.91 0 7.05 0 9.29s.53 4.38 1.48 6.29l3.87-3z"/>
+                    <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.91-2.97c-1.12.75-2.55 1.2-4.05 1.2-3.09 0-5.73-2.55-6.65-5.54L1.48 15.7C3.37 19.62 7.35 22.3 12 22.3z"/>
+                </svg>
+                Continue with Google
+            </a>
         </form>
 
         <div class="auth-footer">

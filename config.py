@@ -38,10 +38,6 @@ class Config:
     # AI Intelligence Layer - V5.0
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 
-    # Google OAuth credentials
-    GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_OAUTH_CLIENT_ID', '')
-    GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET', '')
-
     # Supabase credentials
     SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
     SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY', '')

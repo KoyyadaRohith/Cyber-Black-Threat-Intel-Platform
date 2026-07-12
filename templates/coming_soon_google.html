@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Google Sign-In (Coming Soon) - Cyber Black Threat Intel Platform{% endblock %}
+
+{% block content %}
+<style>
+    .coming-soon-wrapper {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        background: radial-gradient(circle at center, rgba(13, 20, 38, 0.8) 0%, var(--bg-main) 100%);
+        animation: fadeIn 0.8s ease-out;
+    }
+    
+    .coming-soon-card {
+        width: 100%;
+        max-width: 480px;
+        padding: 40px 30px;
+        position: relative;
+        text-align: center;
+        overflow: hidden;
+    }
+
+    .coming-soon-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 6px;
+        background: linear-gradient(90deg, #4285F4 0%, #EA4335 25%, #FBBC05 50%, #34A853 100%);
+        border-radius: 12px 12px 0 0;
+    }
+
+    .google-logo-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 12px;
+    }
+
+    .coming-soon-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(0, 240, 255, 0.1);
+        border: 1px solid rgba(0, 240, 255, 0.25);
+        color: var(--primary);
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 5px 12px;
+        border-radius: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+        animation: pulseGlow 2s infinite ease-in-out;
+    }
+
+    .coming-soon-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+        letter-spacing: 0.02em;
+    }
+
+    /* Illustration Styling */
+    .illustration-container {
+        position: relative;
+        width: 180px;
+        height: 180px;
+        margin: 25px auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: floatIllustration 4s infinite ease-in-out;
+    }
+
+    .illustration-glow {
+        position: absolute;
+        width: 130px;
+        height: 130px;
+        background: radial-gradient(circle, rgba(0, 240, 255, 0.18) 0%, transparent 70%);
+        border-radius: 50%;
+        animation: softPulseGlow 3s infinite ease-in-out;
+    }
+
+    .illustration-svg {
+        width: 140px;
+        height: 140px;
+        filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.3));
+    }
+
+    /* Message Styling */
+    .coming-soon-message {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin-bottom: 30px;
+        padding: 0 10px;
+    }
+
+    .coming-soon-message p {
+        margin-bottom: 12px;
+    }
+    
+    .coming-soon-message p:last-child {
+        margin-bottom: 0;
+        color: var(--text-muted);
+        font-size: 0.82rem;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes floatIllustration {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+    }
+
+    @keyframes softPulseGlow {
+        0%, 100% { transform: scale(0.9); opacity: 0.6; }
+        50% { transform: scale(1.15); opacity: 1; }
+    }
+
+    @keyframes pulseGlow {
+        0%, 100% { box-shadow: 0 0 10px rgba(0, 240, 255, 0.1); }
+        50% { box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); border-color: rgba(0, 240, 255, 0.4); }
+    }
+</style>
+
+<div class="coming-soon-wrapper">
+    <div class="glass-panel coming-soon-card">
+        <!-- Top Google Logo -->
+        <div class="google-logo-container">
+            <svg style="width: 42px; height: 42px;" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+        </div>
+
+        <h2 class="coming-soon-title">Google Sign-In</h2>
+        
+        <!-- Status Badge -->
+        <div class="coming-soon-badge">
+            <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); margin-right: 4px;"></span>
+            Coming Soon
+        </div>
+
+        <!-- Custom Pulsing SVG Illustration (Shield + Google G + Nodes + Connections) -->
+        <div class="illustration-container">
+            <div class="illustration-glow"></div>
+            <svg class="illustration-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Shield Base -->
+                <path d="M50 82C50 82 78 68.4 78 48V25L50 15L22 25V48C22 68.4 50 82 50 82Z" stroke="#00F0FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 2" opacity="0.6"/>
+                <path d="M50 78C50 78 74 65.6 74 48V28L50 19L26 28V48C26 65.6 50 78 50 78Z" stroke="#00F0FF" stroke-width="2.5" stroke-linejoin="round"/>
+                
+                <!-- Digital Connection Lines / Network -->
+                <path d="M50 19V38" stroke="#00F0FF" stroke-width="1.2" opacity="0.7"/>
+                <path d="M26 28L42 42" stroke="#00F0FF" stroke-width="1.2" opacity="0.5"/>
+                <path d="M74 28L58 42" stroke="#00F0FF" stroke-width="1.2" opacity="0.5"/>
+                <path d="M26 48H38" stroke="#00F0FF" stroke-width="1.2" opacity="0.5"/>
+                <path d="M74 48H62" stroke="#00F0FF" stroke-width="1.2" opacity="0.5"/>
+                <path d="M50 58V78" stroke="#00F0FF" stroke-width="1.2" opacity="0.7"/>
+
+                <!-- Network Nodes -->
+                <circle cx="50" cy="19" r="3" fill="#00F0FF"/>
+                <circle cx="26" cy="28" r="3" fill="#00F0FF"/>
+                <circle cx="74" cy="28" r="3" fill="#00F0FF"/>
+                <circle cx="26" cy="48" r="3" fill="#00F0FF"/>
+                <circle cx="74" cy="48" r="3" fill="#00F0FF"/>
+                
+                <!-- Central Shield/OAuth Lock Symbol Base -->
+                <circle cx="50" cy="48" r="16" fill="rgba(13, 20, 38, 0.95)" stroke="#00F0FF" stroke-width="2"/>
+                
+                <!-- Inner Google 'G' Styled Emblem -->
+                <path d="M56.5 48C56.5 47.3 56.4 46.6 56.3 46H50V50.2H53.6C53.4 51.1 52.9 51.8 52.1 52.3V55.1H55C56.7 53.5 57.7 51 57.7 48" fill="#4285F4"/>
+                <path d="M50 57C51.9 57 53.5 56.4 54.6 55.3L51.8 52.5C51 53 50.1 53.3 49.1 53.3C47.1 53.3 45.4 52 44.8 50.2H41.8V53.1C43.1 55.7 45.8 57 49.1 57" fill="#34A853"/>
+                <path d="M44.8 50.2C44.6 49.6 44.5 49 44.5 48.3C44.5 47.6 44.6 47 44.8 46.4V43.5H41.8C41.2 44.7 40.9 46.1 40.9 47.5C40.9 48.9 41.2 50.3 41.8 51.5L44.8 50.2" fill="#FBBC05"/>
+                <path d="M50 43.5C51.3 43.5 52.5 44 53.4 44.9L56.5 41.8C54.6 40 52.1 39 49.1 39C45.8 39 43.1 40.7 41.8 43.3L44.8 46.2C45.4 44.4 47.1 43.5 50 43.5" fill="#EA4335"/>
+            </svg>
+        </div>
+
+        <!-- Explanatory message -->
+        <div class="coming-soon-message">
+            <p>Google Sign-In is planned for a future release of Cyber Black Threat Intel Platform.</p>
+            <p>For now, please continue using your email/username and password to access the platform.</p>
+            <p>We appreciate your patience and look forward to bringing additional authentication options in an upcoming update.</p>
+        </div>
+
+        <!-- Back to Login Button -->
+        <a href="{{ url_for('login') }}" class="btn btn-primary" style="width: 100%; padding: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+            <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i>
+            Back to Login
+        </a>
+    </div>
+</div>
+{% endblock %}

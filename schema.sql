@@ -14,9 +14,11 @@ CREATE TABLE IF NOT EXISTS public.users (
     role VARCHAR(100) DEFAULT 'Threat Analyst',
     organization VARCHAR(255) DEFAULT 'Cyber Black Threat Intel Platform',
     profile_photo_url TEXT,
+    avatar_url TEXT,
     provider VARCHAR(50) DEFAULT 'local',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    last_login TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_username ON public.users(username);

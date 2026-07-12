@@ -310,210 +310,134 @@ def clear_notifications():
 
 # --- GOOGLE OAUTH ROUTES ---
 
+@app.route('/coming-soon/google')
+def coming_soon_google():
+    """Renders the Google Sign-In Coming Soon placeholder page."""
+    return render_template('coming_soon_google.html')
+
 @app.route('/login/google')
 def login_google():
-    """Initiates Google OAuth 2.0 flow or falls back to mock flow if credentials are not configured."""
-    client_id = app.config.get('GOOGLE_CLIENT_ID', '').strip()
-    client_secret = app.config.get('GOOGLE_CLIENT_SECRET', '').strip()
-    
-    # If keys are missing, execute the mock flow
-    if not client_id or not client_secret:
-        return redirect(url_for('login_google_mock_consent'))
-        
-    # Otherwise, execute real Google OAuth flow
-    state = secrets.token_urlsafe(16)
-    session['oauth_state'] = state
-    
-    google_auth_url = "https://accounts.google.com/o/oauth2/v2/auth"
-    params = {
-        'response_type': 'code',
-        'client_id': client_id,
-        'redirect_uri': url_for('google_callback', _external=True),
-        'scope': 'openid email profile',
-        'state': state,
-        'prompt': 'select_account'
-    }
-    return redirect(f"{google_auth_url}?{urlencode(params)}")
+    """Bypasses OAuth flow and redirects to Coming Soon screen (OAuth code preserved below)."""
+    return redirect(url_for('coming_soon_google'))
 
-@app.route('/login/google/mock-consent', methods=['GET', 'POST'])
-def login_google_mock_consent():
-    """Mock Google Consent page for local development."""
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip()
-        name = request.form.get('name', '').strip()
-        picture = request.form.get('picture', '').strip()
+    # Existing Google OAuth 2.0 flow using Supabase Auth (Can be re-enabled by removing the redirect above)
+    try:
+        from supabase import create_client
+        client = create_client(Config.SUPABASE_URL, Config.SUPABASE_ANON_KEY)
         
-        if not email or not name:
-            flash("Mock login details are incomplete.", "error")
-            return redirect(url_for('login'))
+        redirect_uri = url_for('google_callback', _external=True)
+        res = client.auth.sign_in_with_oauth({
+            "provider": "google",
+            "options": {
+                "redirect_to": redirect_uri,
+                "query_params": {
+                    "prompt": "select_account"
+                }
+            }
+        })
+        
+        # Save the code verifier in session so we can retrieve it in the callback (since Python Client generates one when flow_type="pkce")
+        code_verifier = client.auth._storage.get_item(f"{client.auth._storage_key}-code-verifier")
+        if code_verifier:
+            session['oauth_code_verifier'] = code_verifier
             
-        # Store mock account info temporarily in session
-        session['mock_oauth_user'] = {
-            'email': email,
-            'name': name,
-            'picture': picture or f"https://lh3.googleusercontent.com/a/default-user"
-        }
-        
-        # Redirect to callback with a dummy code
-        return redirect(url_for('google_callback', code='mock_auth_code_12345'))
-        
-    return render_template('google_mock_consent.html')
+        return redirect(res.url)
+    except Exception as e:
+        print(f"Error initiating Google OAuth: {e}")
+        flash("Google Sign-In service is temporarily unavailable.", "error")
+        return redirect(url_for('login'))
+
 
 @app.route('/login/google/callback', methods=['GET', 'POST'])
 def google_callback():
-    """OAuth 2.0 callback endpoint: verifies profile info (via JWT/tokeninfo or mock) and registers/logs in the user."""
-    client_id = app.config.get('GOOGLE_CLIENT_ID', '').strip()
-    client_secret = app.config.get('GOOGLE_CLIENT_SECRET', '').strip()
-    
-    # Detect if we are in mock mode
-    is_mock = not client_id or not client_secret
-    
+    """OAuth 2.0 callback endpoint: verifies profile info via Supabase Google OAuth and registers/logs in the user."""
     user_info = None
     
-    # 1. Handle real Google Identity Services (GSI) POST request with JWT credential
+    # 1. Handle real Google Identity Services (GSI) POST request with JWT credential (if any client-side button triggers this)
     if request.method == 'POST' and 'credential' in request.form:
-        if is_mock:
-            flash("System configured in mock authentication mode. GSI POST payload rejected.", "error")
-            return redirect(url_for('login'))
-            
         credential = request.form['credential']
-        tokeninfo_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={credential}"
-        
         try:
-            response = requests.get(tokeninfo_url, timeout=10)
-            if response.status_code != 200:
-                flash("Authentication failed: Google ID token verification rejected.", "error")
-                return redirect(url_for('login'))
-                
-            user_info = response.json()
-            # Safety check: Verify the ID token was issued to our Client ID
-            if user_info.get('aud') != client_id:
-                flash("OAuth verification error: Client audience mismatch.", "error")
-                return redirect(url_for('login'))
-        except requests.RequestException as e:
-            flash(f"Connection error to Google verification endpoint: {str(e)}", "error")
+            from supabase import create_client
+            client = create_client(Config.SUPABASE_URL, Config.SUPABASE_ANON_KEY)
+            auth_res = client.auth.sign_in_with_id_token({
+                "provider": "google",
+                "token": credential
+            })
+            if auth_res and auth_res.user:
+                user_info = auth_res.user
+        except Exception as e:
+            print(f"Error signing in with Google ID token: {e}")
+            flash("Google ID token verification failed.", "error")
             return redirect(url_for('login'))
             
-    # 2. Handle mock login redirection
-    elif is_mock:
-        # Retrieve mock account details
-        user_info = session.pop('mock_oauth_user', None)
-        if not user_info:
-            # Check if testing client POSTed direct mock info
-            if request.method == 'POST':
-                user_info = {
-                    'email': request.form.get('email'),
-                    'name': request.form.get('name'),
-                    'picture': request.form.get('picture')
-                }
-            if not user_info or not user_info.get('email'):
-                flash("Mock authentication session timed out or was invalid.", "error")
-                return redirect(url_for('login'))
-                
-    # 3. Handle legacy real Google redirect/code flow (GET)
+    # 2. Handle redirect/code flow (GET)
     else:
-        # Verify OAuth state
-        returned_state = request.args.get('state')
-        saved_state = session.pop('oauth_state', None)
-        if not returned_state or returned_state != saved_state:
-            flash("OAuth state verification failed. Potential cross-site request forgery detected.", "error")
+        code = request.args.get('code')
+        error_desc = request.args.get('error_description') or request.args.get('error')
+        if error_desc:
+            flash(f"Google authentication cancelled or failed: {error_desc}", "error")
             return redirect(url_for('login'))
             
-        # Exchange code for access token
-        code = request.args.get('code')
         if not code:
             flash("Authorization code not returned by Google.", "error")
             return redirect(url_for('login'))
             
-        token_url = "https://oauth2.googleapis.com/token"
-        data = {
-            'code': code,
-            'client_id': client_id,
-            'client_secret': client_secret,
-            'redirect_uri': url_for('google_callback', _external=True),
-            'grant_type': 'authorization_code'
-        }
+        code_verifier = session.pop('oauth_code_verifier', None)
         
         try:
-            response = requests.post(token_url, data=data, timeout=10)
-            response.raise_for_status()
-            token_json = response.json()
-            access_token = token_json.get('access_token')
+            from supabase import create_client
+            client = create_client(Config.SUPABASE_URL, Config.SUPABASE_ANON_KEY)
             
-            if not access_token:
-                flash("Access token exchange failed.", "error")
-                return redirect(url_for('login'))
+            # Restore the code verifier to client storage so exchange_code_for_session can use it
+            if code_verifier:
+                client.auth._storage.set_item(f"{client.auth._storage_key}-code-verifier", code_verifier)
                 
-            # Fetch user info
-            userinfo_url = "https://openidconnect.googleapis.com/v1/userinfo"
-            headers = {'Authorization': f'Bearer {access_token}'}
-            userinfo_response = requests.get(userinfo_url, headers=headers, timeout=10)
-            userinfo_response.raise_for_status()
-            user_info = userinfo_response.json()
-        except requests.RequestException as e:
-            flash(f"Connection error to Google Authentication server: {str(e)}", "error")
+            auth_res = client.auth.exchange_code_for_session({
+                "auth_code": code,
+                "code_verifier": code_verifier
+            })
+            
+            if auth_res and auth_res.user:
+                user_info = auth_res.user
+        except Exception as e:
+            print(f"Error exchanging authorization code: {e}")
+            flash("Failed to establish secure session with Google OAuth.", "error")
             return redirect(url_for('login'))
 
-    # Extract user identity attributes
-    email = user_info.get('email', '').strip()
-    full_name = user_info.get('name', '').strip()
-    picture = user_info.get('picture', '')
-    
-    if not email:
-        flash("Email address not returned by identity provider.", "error")
+    if not user_info:
+        flash("Authentication did not return user profile info.", "error")
         return redirect(url_for('login'))
 
-    # Check if email is registered
+    # Extract user identity attributes from Supabase user object
+    email = user_info.email.strip()
+    user_metadata = user_info.user_metadata or {}
+    full_name = user_metadata.get('full_name', '') or user_metadata.get('name', '') or email.split('@')[0]
+    picture = user_metadata.get('avatar_url', '') or user_metadata.get('picture', '')
+    
+    # Synchronize the user profile into Supabase users table (creates profile if not exists, updates last_login)
+    sync_success = db.sync_google_user_profile(user_info.id, email, full_name, picture)
+    if not sync_success:
+        print("[WARNING] Failed to sync Google user profile with public schema users table.")
+
+    # Retrieve updated user record from database
     user = db.get_user_by_email(email)
     
-    if user:
-        # Log existing user in
-        session['username'] = user['username']
-        session['email'] = user['email']
-        session['user_id'] = user.get('id')
-        session['full_name'] = user.get('full_name', user['username'].title())
-        session['mobile_number'] = user.get('mobile_number', '')
-        if picture or user.get('profile_photo_url'):
-            session['photo_url'] = user.get('profile_photo_url') or picture
-            
-        flash(f"Signed in via Google. Welcome back, Analyst {session['full_name']}.", "success")
-        return redirect(url_for('dashboard'))
-    else:
-        # Register user dynamically (Google Sign-Up Flow)
-        # Generate unique sanitized username from email prefix
-        base_username = email.split('@')[0].replace('.', '_').replace('-', '_')
-        username = base_username
-        counter = 1
-        while db.get_user(username) is not None:
-            username = f"{base_username}_{counter}"
-            counter += 1
-            
-        # Google users do not use passwords. Generate a random password hash
-        password_hash = hash_password(secrets.token_hex(24))
-        
-        success, message = db.add_user(
-            username=username,
-            email=email,
-            password_hash=password_hash,
-            full_name=full_name,
-            profile_photo_url=picture,
-            provider='google'
-        )
-        
-        if success:
-            session['username'] = username
-            session['email'] = email
-            session['user_id'] = db._get_user_uuid(username)
-            session['full_name'] = full_name
-            session['mobile_number'] = ''
-            if picture:
-                session['photo_url'] = picture
-                
-            flash(f"Account generated via Google. Welcome, Analyst {full_name}!", "success")
-            return redirect(url_for('dashboard'))
-        else:
-            flash(f"Sign-up registration failed: {message}", "error")
-            return redirect(url_for('login'))
+    # Fallback to metadata if public profiles insert failed or is slow
+    username = user['username'] if user else email.split('@')[0].replace('.', '_').replace('-', '_')
+    user_id = user['id'] if user else user_info.id
+    display_name = user.get('full_name', full_name) if user else full_name
+    
+    # Establish Flask session state matching Supabase authenticated user
+    session['username'] = username
+    session['email'] = email
+    session['user_id'] = user_id
+    session['full_name'] = display_name
+    session['mobile_number'] = user.get('mobile_number', '') if user else ''
+    session['photo_url'] = user.get('profile_photo_url', picture) if user else picture
+    
+    add_notification('log-in', 'var(--color-safe)', 'Login Successful', f"Signed in via Google. Welcome back, Analyst {session['full_name']}.")
+    flash(f"Signed in via Google. Welcome back, Analyst {session['full_name']}.", "success")
+    return redirect(url_for('dashboard'))
 
 # --- AUTHENTICATED PLATFORM PAGES ---
 
