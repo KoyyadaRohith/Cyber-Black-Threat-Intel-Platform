@@ -1,9 +1,19 @@
+import tempfile
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / '.env')
+
+# Detect if running on Vercel
+IS_VERCEL = os.getenv("VERCEL") is not None
+
+# Use writable storage on Vercel
+if IS_VERCEL:
+    STORAGE_DIR = Path(tempfile.gettempdir()) / "cbtip"
+else:
+    STORAGE_DIR = BASE_DIR
 
 class Config:
     BASE_DIR = BASE_DIR
@@ -12,7 +22,7 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'cyber-black-threat-intelligence-secret-key-1234')
     
     # Upload Directories
-    UPLOAD_FOLDER = BASE_DIR / 'uploads'
+    UPLOAD_FOLDER = STORAGE_DIR / 'uploads'
     UPLOAD_CSV = UPLOAD_FOLDER / 'csv'
     UPLOAD_TXT = UPLOAD_FOLDER / 'txt'
     UPLOAD_LOGS = UPLOAD_FOLDER / 'logs'
@@ -58,4 +68,8 @@ class Config:
             cls.DB_FOLDER
         ]
         for folder in folders:
-            folder.mkdir(parents=True, exist_ok=True)
+            try:
+                folder.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                print(f"[WARNING] Could not create folder: {folder}")
+                print(e)

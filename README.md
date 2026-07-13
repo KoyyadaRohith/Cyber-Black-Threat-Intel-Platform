@@ -1,26 +1,22 @@
 <div align="center">
 
-<h1><strong>🛡️ Cyber Black Threat Intel Platform (CBTIP)</strong></h1>
+# 🛡️ Cyber Black Threat Intel Platform (CBTIP)
 
-<h3>AI-Powered Threat Intelligence & Security Investigation Platform</h3>
+### AI-Powered Threat Intelligence & Security Investigation Platform
 
-<p>
-A modern, cloud-powered cybersecurity platform for <strong>real-time IP reputation analysis, threat intelligence, AI-assisted security investigation, and professional security reporting.</strong>
-</p>
+A modern, cloud-powered cybersecurity platform for **real-time IP reputation analysis, threat intelligence, AI-assisted security investigation, and professional security reporting**.
 
-<br>
+---
 
-<img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" />
-<img src="https://img.shields.io/badge/Flask-3.x-000000?style=for-the-badge&logo=flask&logoColor=white" />
-<img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" />
-<img src="https://img.shields.io/badge/Gemini-AI-4285F4?style=for-the-badge&logo=google&logoColor=white" />
-<img src="https://img.shields.io/badge/VirusTotal-API-394EFF?style=for-the-badge" />
-<img src="https://img.shields.io/badge/AbuseIPDB-API-E53935?style=for-the-badge" />
-<img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" />
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-3.x-000000?style=for-the-badge&logo=flask&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Gemini AI](https://img.shields.io/badge/Gemini-AI-4285F4?style=for-the-badge&logo=google&logoColor=white)
+![VirusTotal](https://img.shields.io/badge/VirusTotal-API-394EFF?style=for-the-badge)
+![AbuseIPDB](https://img.shields.io/badge/AbuseIPDB-API-E53935?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 
-<br><br>
-
-<strong>🚀 Cloud Powered • 🤖 AI Assisted • 🛡️ Threat Intelligence • 📊 Security Analytics</strong>
+**🚀 Cloud Powered • 🤖 AI Assisted • 🛡️ Threat Intelligence • 📊 Security Analytics**
 
 </div>
 
@@ -167,7 +163,7 @@ Each report includes investigation details, threat intelligence, classifications
 The platform includes secure account management features.
 
 - Secure Authentication
-- Google Sign-In (Coming Soon)
+- Google OAuth Login
 - User Profiles
 - Notification Center
 - Personal Settings
@@ -529,6 +525,7 @@ Cyber Black Threat Intel Platform is continuously evolving as part of the **Cybe
 
 - Cloud Database Migration (Supabase PostgreSQL)
 - Secure Authentication
+- Google OAuth Support
 - Real-Time Threat Intelligence
 - AI Intelligence Layer
 - Dashboard Analytics
@@ -635,16 +632,7 @@ Please ensure your code follows the existing project structure and coding standa
 
 🟢 Active Development
 
-🟢 Active Development
-
-Current Release:
-Version 1.0
-
-Status:
-Stable Development Build
-
-Next Planned Release:
-Version 1.1
+The project continues to receive improvements, performance optimizations, bug fixes, and new cybersecurity features as part of the Cyber Black World (CBW) ecosystem.
 
 ---
 
@@ -660,6 +648,7 @@ Special thanks to the following platforms and services that made this project po
 - Python Community
 - Open Source Community
 
+```
 
 👨‍💻 Developed By
 
@@ -667,12 +656,27 @@ Koyyada Rohith
 
 🔐 Cybersecurity Enthusiast | 🎓 B.Tech CSE | 🚀 Building Projects in Cybersecurity, Collaboration & Technology
 
+```
 
 📌 Version
 
 Version 1.0
 
+```
 
 ## 📜 License
 
-This project is released under the MIT License. See the LICENSE file for complete license information.
+This project is licensed under the MIT License. See the LICENSE file for details.
+
+```
+<div align="center">
+
+# 🛡️ Cyber Black Squad — Startup Workspace Platform
+
+### Startup Management & Collaboration Platform
+
+**Part of the Cyber Black World (CBW) Ecosystem**
+
+</div>
+
+```
