@@ -667,16 +667,3 @@ Version 1.0
 ## 📜 License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
-
-```
-<div align="center">
-
-# 🛡️ Cyber Black Squad — Startup Workspace Platform
-
-### Startup Management & Collaboration Platform
-
-**Part of the Cyber Black World (CBW) Ecosystem**
-
-</div>
-
-```
