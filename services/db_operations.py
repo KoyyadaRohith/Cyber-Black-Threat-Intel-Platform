@@ -280,6 +280,40 @@ def update_user(current_username, full_name=None, username=None, email=None, loc
         print(f"Error in update_user: {e}")
         return False, f"Failed to update profile: {e}"
 
+def update_password(username, password_hash):
+    """Update user password in auth and profile table."""
+    if not supabase:
+        return False, "Database not configured."
+        
+    user_uuid = _get_user_uuid(username)
+    if not user_uuid:
+        return False, "User not found."
+        
+    try:
+        # Update public.users database
+        try:
+            supabase.table('users').update({
+                "password_hash": password_hash,
+                "password_updated_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat()
+            }).eq('id', user_uuid).execute()
+        except Exception as db_err:
+            print(f"[WARNING] Failed to update password_hash/password_updated_at in public.users: {db_err}")
+            # Try updating just updated_at if columns are missing
+            try:
+                supabase.table('users').update({
+                    "updated_at": datetime.now().isoformat()
+                }).eq('id', user_uuid).execute()
+            except Exception:
+                pass
+        
+        # Update Supabase Auth password
+        supabase.auth.admin.update_user_by_id(user_uuid, {"password": password_hash})
+        return True, "Password updated successfully."
+    except Exception as e:
+        print(f"Error in update_password: {e}")
+        return False, f"Failed to update password: {e}"
+
 # --- Investigation History ---
 
 def add_history(username, ip, country, isp, asn, risk_score, classification, threat_summary, recommendations, abuse_score, vt_detections, source='manual', duration_ms=0, sources_used='AbuseIPDB, VirusTotal, WHOIS', actions_taken='Lookup Completed', notes='', severity='Low', tags=''):

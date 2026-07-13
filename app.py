@@ -32,6 +32,20 @@ app.jinja_env.globals['Config'] = Config
 def hash_password(password):
     return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
+def validate_password_strength(password):
+    """Validate password strength: 8+ chars, uppercase, lowercase, digit, special char."""
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long."
+    if not re.search(r"[A-Z]", password):
+        return False, "Password must contain at least one uppercase letter."
+    if not re.search(r"[a-z]", password):
+        return False, "Password must contain at least one lowercase letter."
+    if not re.search(r"\d", password):
+        return False, "Password must contain at least one number."
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        return False, "Password must contain at least one special character."
+    return True, ""
+
 # Parallelized IP scanners to eliminate synchronous latency bottlenecks
 def fetch_ip_details_parallel(ip_address, ab_key, vt_key, use_mock):
     if use_mock:
@@ -279,15 +293,36 @@ def register():
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
-        email = request.form['email'].strip()
-        try:
-            from supabase import create_client
-            client = create_client(Config.SUPABASE_URL, Config.SUPABASE_ANON_KEY)
-            client.auth.reset_password_for_email(email, {"redirect_to": url_for('login', _external=True)})
-        except Exception:
-            pass
-        flash(f"Security key reset token dispatched to {email}. Check your corporate inbox.", "success")
-        return redirect(url_for('login'))
+        # Parse JSON or fallback to Form data
+        data = request.get_json(silent=True) or request.form
+        email = data.get('email', '').strip()
+        new_password = data.get('new_password', '').strip()
+        confirm_password = data.get('confirm_password', '').strip()
+        
+        if not email or not new_password or not confirm_password:
+            return jsonify(success=False, message="All fields are required."), 400
+            
+        if new_password != confirm_password:
+            return jsonify(success=False, message="New passwords do not match."), 400
+            
+        # Server-side validation
+        is_strong, strength_err = validate_password_strength(new_password)
+        if not is_strong:
+            return jsonify(success=False, message=strength_err), 400
+            
+        # Find user by email
+        user = db.get_user_by_email(email)
+        if not user:
+            return jsonify(success=False, message="Invalid email or unable to reset password."), 400
+            
+        # Reset password directly
+        success, msg = db.update_password(user['username'], hash_password(new_password))
+        if success:
+            session.clear()  # Invalidate existing session
+            return jsonify(success=True, message="Your account password has been reset successfully.")
+        else:
+            return jsonify(success=False, message="Invalid email or unable to reset password."), 500
+            
     return render_template('forgot_password.html')
 
 @app.route('/logout')
@@ -1335,6 +1370,37 @@ def upload_avatar():
     avatar_url = url_for('static', filename=f'uploads/avatars/{filename}') + f"?t={int(time.time())}"
     return jsonify(success=True, message="Profile picture updated successfully.", avatar_url=avatar_url)
 
+@app.route('/api/settings/change-password', methods=['POST'])
+@login_required
+def change_password():
+    data = request.get_json(silent=True) or request.form
+    current_password = data.get('current_password', '').strip()
+    new_password = data.get('new_password', '').strip()
+    confirm_password = data.get('confirm_password', '').strip()
+    
+    if not current_password or not new_password or not confirm_password:
+        return jsonify(success=False, message="All password fields are required."), 400
+        
+    if new_password != confirm_password:
+        return jsonify(success=False, message="New passwords do not match."), 400
+        
+    # Backend password strength validation
+    is_strong, strength_err = validate_password_strength(new_password)
+    if not is_strong:
+        return jsonify(success=False, message=strength_err), 400
+        
+    user = db.get_user(session['username'])
+    if not user or user['password_hash'] != hash_password(current_password):
+        return jsonify(success=False, message="Current password is incorrect."), 400
+        
+    success, msg = db.update_password(session['username'], hash_password(new_password))
+    if success:
+        add_notification('key', 'var(--color-safe)', 'Password Changed', 'Your account password has been updated.')
+        session.clear()  # Invalidate existing session
+        return jsonify(success=True, message="Password updated successfully.")
+    else:
+        return jsonify(success=False, message=f"Failed to update password: {msg}"), 500
+
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
@@ -1374,13 +1440,7 @@ def settings():
         add_notification('settings', 'var(--primary)', 'Settings Updated', 'Console configurations saved successfully.')
         return redirect(url_for('settings'))
         
-    system_info = {
-        'platform': platform.system(),
-        'os_version': platform.version(),
-        'python_version': platform.python_version(),
-        'architecture': platform.machine()
-    }
-    return render_template('settings.html', settings=cfg, system_info=system_info)
+    return render_template('settings.html', settings=cfg)
 
 # ============================================================
 # V5.0 AI INTELLIGENCE LAYER ROUTES

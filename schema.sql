@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     username VARCHAR(100) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) DEFAULT '',
+    password_updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     full_name VARCHAR(150),
     mobile_number VARCHAR(20),
     location VARCHAR(255) DEFAULT 'Hyderabad, Telangana, India',

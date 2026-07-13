@@ -147,29 +147,49 @@
             </div>
         </div>
 
-        <div class="settings-section" style="margin-bottom: 30px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
+        <!-- SECTION 8: Password & Security -->
+        <div class="settings-section" style="margin-bottom: 30px; border-bottom: 1px solid var(--border-color); padding-bottom: 24px;">
             <h4 style="font-size: 0.95rem; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="monitor" style="width: 16px; height: 16px; color: var(--accent-teal);"></i>
-                8. System Information
+                <i data-lucide="shield-check" style="width: 16px; height: 16px; color: var(--accent-teal);"></i>
+                8. Password & Security
             </h4>
-            <div style="display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 15px;">
-                <div class="form-group">
-                    <label class="form-label">Platform</label>
-                    <div class="form-control">{{ system_info.platform }}</div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">OS Version</label>
-                    <div class="form-control">{{ system_info.os_version }}</div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Python Runtime</label>
-                    <div class="form-control">{{ system_info.python_version }}</div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Architecture</label>
-                    <div class="form-control">{{ system_info.architecture }}</div>
+            
+            <!-- Live AJAX Alert Banner for Password Update -->
+            <div id="pw-alert-banner" style="display: none; border-radius: 6px; padding: 12px 14px; margin-bottom: 20px; font-size: 0.85rem; align-items: center; gap: 10px;">
+                <i id="pw-alert-icon" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+                <span id="pw-alert-text"></span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 15px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="current_password" class="form-label">Current Password</label>
+                    <input type="password" id="current_password" class="form-control" placeholder="Enter current password" autocomplete="current-password">
                 </div>
             </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                <div class="form-group" style="margin-bottom: 0; position: relative;">
+                    <label for="new_password" class="form-label">New Password</label>
+                    <input type="password" id="new_password" class="form-control" placeholder="••••••••" autocomplete="new-password">
+                    <!-- Strength Indicator Bar -->
+                    <div class="strength-bar-container" style="height: 4px; background: rgba(255, 255, 255, 0.05); border-radius: 2px; margin-top: 8px; overflow: hidden;">
+                        <div id="strength-bar" style="height: 100%; width: 0%; transition: all 0.3s ease; background: var(--color-malicious);"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                        <span id="strength-label" style="font-size: 0.72rem; color: var(--text-muted);">Strength: Weak</span>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="confirm_password" class="form-label">Confirm Password</label>
+                    <input type="password" id="confirm_password" class="form-control" placeholder="••••••••" autocomplete="new-password">
+                </div>
+            </div>
+
+
+            <button type="button" id="pw-submit-btn" class="btn btn-primary" style="padding: 12px 24px; font-size: 1rem; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;" disabled>
+                <i data-lucide="shield-check" id="pw-btn-icon"></i>
+                <span id="pw-btn-text">Update Password</span>
+            </button>
         </div>
         
         <!-- SECTION 9: AI Intelligence Layer Settings -->
@@ -206,6 +226,7 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // Theme Switch logic
         const themeBtn = document.getElementById('settingsThemeToggle');
         const themeIcon = document.getElementById('settingsThemeIcon');
         const themeText = document.getElementById('settingsThemeText');
@@ -236,7 +257,6 @@
                 localStorage.setItem('theme', newTheme);
                 updateThemeUI(newTheme);
                 
-                // Sync top nav toggle bar icon if present
                 const topNavIcon = document.querySelector('#themeToggleBtn i');
                 if (topNavIcon) {
                     if (newTheme === 'light') {
@@ -247,6 +267,167 @@
                         topNavIcon.style.color = 'var(--primary)';
                     }
                     if (window.lucide) lucide.createIcons();
+                }
+            });
+        }
+
+        // Password Reset / Change Logic inside Settings
+        const currentPwInput = document.getElementById('current_password');
+        const passwordInput = document.getElementById('new_password');
+        const confirmInput = document.getElementById('confirm_password');
+        const pwSubmitBtn = document.getElementById('pw-submit-btn');
+        const strengthBar = document.getElementById('strength-bar');
+        const strengthLabel = document.getElementById('strength-label');
+        const pwBtnIcon = document.getElementById('pw-btn-icon');
+        const pwBtnText = document.getElementById('pw-btn-text');
+        const pwAlertBanner = document.getElementById('pw-alert-banner');
+        const pwAlertIcon = document.getElementById('pw-alert-icon');
+        const pwAlertText = document.getElementById('pw-alert-text');
+
+        // Checklist rules
+        const rules = {
+            length: { el: document.getElementById('rule-length'), check: (val) => val.length >= 8 },
+            upper: { el: document.getElementById('rule-upper'), check: (val) => /[A-Z]/.test(val) },
+            lower: { el: document.getElementById('rule-lower'), check: (val) => /[a-z]/.test(val) },
+            number: { el: document.getElementById('rule-number'), check: (val) => /\d/.test(val) },
+            special: { el: document.getElementById('rule-special'), check: (val) => /[!@#$%^&*(),.?":{}|<>]/.test(val) },
+            match: { el: document.getElementById('rule-match'), check: (val) => val && val === passwordInput.value }
+        };
+
+        function validatePassword() {
+            const val = passwordInput.value;
+            const confirmVal = confirmInput.value;
+            let validCount = 0;
+
+            for (const [key, rule] of Object.entries(rules)) {
+                let pass = false;
+                if (key === 'match') {
+                    pass = rule.check(confirmVal);
+                } else {
+                    pass = rule.check(val);
+                }
+
+                if (pass) {
+                    rule.el.classList.remove('invalid');
+                    rule.el.classList.add('valid');
+                    rule.el.style.color = 'var(--color-safe)';
+                    const icon = rule.el.querySelector('i');
+                    if (icon) {
+                        icon.setAttribute('data-lucide', 'check');
+                        icon.style.color = 'var(--color-safe)';
+                    }
+                    validCount++;
+                } else {
+                    rule.el.classList.remove('valid');
+                    rule.el.classList.add('invalid');
+                    rule.el.style.color = 'var(--text-muted)';
+                    const icon = rule.el.querySelector('i');
+                    if (icon) {
+                        icon.setAttribute('data-lucide', 'x');
+                        icon.style.color = 'var(--color-malicious)';
+                    }
+                }
+            }
+            if (window.lucide) window.lucide.createIcons();
+
+            let strengthPoints = 0;
+            if (val.length >= 8) strengthPoints++;
+            if (/[A-Z]/.test(val)) strengthPoints++;
+            if (/[a-z]/.test(val)) strengthPoints++;
+            if (/\d/.test(val)) strengthPoints++;
+            if (/[!@#$%^&*(),.?":{}|<>]/.test(val)) strengthPoints++;
+
+            let percentage = (strengthPoints / 5) * 100;
+            strengthBar.style.width = `${percentage}%`;
+
+            if (strengthPoints <= 2) {
+                strengthBar.style.backgroundColor = 'var(--color-malicious)';
+                strengthLabel.textContent = 'Strength: Weak';
+                strengthLabel.style.color = 'var(--color-malicious)';
+            } else if (strengthPoints <= 4) {
+                strengthBar.style.backgroundColor = 'var(--color-suspicious)';
+                strengthLabel.textContent = 'Strength: Medium';
+                strengthLabel.style.color = 'var(--color-suspicious)';
+            } else {
+                strengthBar.style.backgroundColor = 'var(--color-safe)';
+                strengthLabel.textContent = 'Strength: Strong';
+                strengthLabel.style.color = 'var(--color-safe)';
+            }
+
+            const allValid = Object.values(rules).every((rule, idx) => {
+                if (idx === 5) return rule.check(confirmVal);
+                return rule.check(val);
+            });
+
+            if (allValid && currentPwInput.value.trim() !== '') {
+                pwSubmitBtn.removeAttribute('disabled');
+            } else {
+                pwSubmitBtn.setAttribute('disabled', 'true');
+            }
+        }
+
+        if (passwordInput && confirmInput && currentPwInput) {
+            passwordInput.addEventListener('input', validatePassword);
+            confirmInput.addEventListener('input', validatePassword);
+            currentPwInput.addEventListener('input', validatePassword);
+        }
+
+        if (pwSubmitBtn) {
+            pwSubmitBtn.addEventListener('click', async () => {
+                pwSubmitBtn.setAttribute('disabled', 'true');
+                pwBtnText.textContent = 'Updating Password...';
+                pwBtnIcon.setAttribute('data-lucide', 'loader-2');
+                pwBtnIcon.style.animation = 'spin 1s linear infinite';
+                if (window.lucide) window.lucide.createIcons();
+
+                const payload = {
+                    current_password: currentPwInput.value.trim(),
+                    new_password: passwordInput.value.trim(),
+                    confirm_password: confirmInput.value.trim()
+                };
+
+                try {
+                    const response = await fetch('/api/settings/change-password', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        pwAlertBanner.style.display = 'flex';
+                        pwAlertBanner.style.background = 'rgba(16, 185, 129, 0.1)';
+                        pwAlertBanner.style.border = '1px solid rgba(16, 185, 129, 0.25)';
+                        pwAlertBanner.style.color = 'var(--color-safe)';
+                        pwAlertText.textContent = result.message + " Invalidation complete. Redirecting to login...";
+                        pwAlertIcon.setAttribute('data-lucide', 'check-circle');
+                        pwAlertIcon.style.color = 'var(--color-safe)';
+                        if (window.lucide) window.lucide.createIcons();
+
+                        setTimeout(() => {
+                            window.location.href = "{{ url_for('login') }}";
+                        }, 1500);
+                    } else {
+                        throw new Error(result.message || 'Error updating password.');
+                    }
+                } catch (err) {
+                    pwAlertBanner.style.display = 'flex';
+                    pwAlertBanner.style.background = 'rgba(255, 0, 85, 0.1)';
+                    pwAlertBanner.style.border = '1px solid rgba(255, 0, 85, 0.25)';
+                    pwAlertBanner.style.color = 'var(--color-malicious)';
+                    pwAlertText.textContent = err.message || 'Error updating password.';
+                    pwAlertIcon.setAttribute('data-lucide', 'alert-circle');
+                    pwAlertIcon.style.color = 'var(--color-malicious)';
+                    if (window.lucide) window.lucide.createIcons();
+
+                    pwSubmitBtn.removeAttribute('disabled');
+                    pwBtnText.textContent = 'Update Password';
+                    pwBtnIcon.setAttribute('data-lucide', 'shield-check');
+                    pwBtnIcon.style.animation = 'none';
+                    if (window.lucide) window.lucide.createIcons();
                 }
             });
         }
