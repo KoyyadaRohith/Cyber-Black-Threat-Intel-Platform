@@ -1,5 +1,11 @@
 import os
 from datetime import datetime
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Explicitly load environment variables from the .env file in the project root
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env', override=True)
 
 # Initialize Supabase Client
 supabase = None
@@ -75,7 +81,7 @@ def _get_user_uuid(username_or_email):
     # 3. Check email lookup
     if '@' in username_or_email_str:
         try:
-            res = supabase.table('users').select('id').eq('email', username_or_email_str).execute()
+            res = supabase.table('users').select('id').ilike('email', username_or_email_str).execute()
             if res.data:
                 uuid_val = res.data[0]['id']
                 try:
@@ -89,7 +95,7 @@ def _get_user_uuid(username_or_email):
             
     # 4. Check username lookup
     try:
-        res = supabase.table('users').select('id').eq('username', username_or_email_str).execute()
+        res = supabase.table('users').select('id').ilike('username', username_or_email_str).execute()
         if res.data:
             uuid_val = res.data[0]['id']
             try:
@@ -212,12 +218,59 @@ def sync_google_user_profile(user_uuid, email, full_name, avatar_url):
             get_settings(username)
         return success
 
+def sync_user_profile(user_uuid, email, username=None, password_hash=""):
+    """Synchronize user details into public.users. Generates username if not provided."""
+    if not supabase:
+        return None
+        
+    try:
+        # Check if profile already exists in public.users
+        res = supabase.table('users').select('*').eq('id', user_uuid).execute()
+        if res.data:
+            return res.data[0]
+            
+        # Profile does not exist, create it!
+        if not username:
+            base_username = email.split('@')[0].replace('.', '_').replace('-', '_')
+            username = base_username
+            counter = 1
+            while get_user(username) is not None:
+                username = f"{base_username}_{counter}"
+                counter += 1
+                
+        payload = {
+            "id": user_uuid,
+            "username": username,
+            "email": email,
+            "password_hash": password_hash,
+            "full_name": username.title(),
+            "mobile_number": "",
+            "location": "Hyderabad, Telangana, India",
+            "bio": "",
+            "role": "Threat Analyst",
+            "organization": "Cyber Black Threat Intel Platform",
+            "profile_photo_url": "",
+            "avatar_url": "",
+            "provider": "local",
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat(),
+            "last_login": datetime.now().isoformat()
+        }
+        
+        success, insert_res = _robust_insert('users', payload)
+        if success:
+            get_settings(username)
+            return payload
+    except Exception as e:
+        print(f"Error in sync_user_profile: {e}")
+    return None
+
 def get_user(username):
     """Retrieve user details by username."""
     if not supabase:
         return None
     try:
-        res = supabase.table('users').select('*').eq('username', username).execute()
+        res = supabase.table('users').select('*').ilike('username', username).execute()
         if res.data:
             user_data = res.data[0]
             if 'password_hash' not in user_data:
@@ -232,7 +285,7 @@ def get_user_by_email(email):
     if not supabase:
         return None
     try:
-        res = supabase.table('users').select('*').eq('email', email).execute()
+        res = supabase.table('users').select('*').ilike('email', email).execute()
         if res.data:
             user_data = res.data[0]
             if 'password_hash' not in user_data:

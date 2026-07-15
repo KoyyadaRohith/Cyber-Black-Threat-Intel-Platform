@@ -183,8 +183,32 @@
                     <label for="confirm_password" class="form-label">Confirm Password</label>
                     <input type="password" id="confirm_password" class="form-control" placeholder="••••••••" autocomplete="new-password">
                 </div>
+            <div class="password-rules-panel" style="margin-top: 15px; margin-bottom: 15px; padding: 12px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.8rem; display: flex; flex-direction: column; gap: 8px;">
+                <div class="rule invalid" id="rule-length" style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); transition: all 0.3s ease;">
+                    <i data-lucide="x" style="width: 14px; height: 14px; color: var(--color-malicious);"></i>
+                    <span>Minimum 8 characters</span>
+                </div>
+                <div class="rule invalid" id="rule-upper" style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); transition: all 0.3s ease;">
+                    <i data-lucide="x" style="width: 14px; height: 14px; color: var(--color-malicious);"></i>
+                    <span>At least one uppercase letter</span>
+                </div>
+                <div class="rule invalid" id="rule-lower" style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); transition: all 0.3s ease;">
+                    <i data-lucide="x" style="width: 14px; height: 14px; color: var(--color-malicious);"></i>
+                    <span>At least one lowercase letter</span>
+                </div>
+                <div class="rule invalid" id="rule-number" style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); transition: all 0.3s ease;">
+                    <i data-lucide="x" style="width: 14px; height: 14px; color: var(--color-malicious);"></i>
+                    <span>At least one number</span>
+                </div>
+                <div class="rule invalid" id="rule-special" style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); transition: all 0.3s ease;">
+                    <i data-lucide="x" style="width: 14px; height: 14px; color: var(--color-malicious);"></i>
+                    <span>At least one special character</span>
+                </div>
+                <div class="rule invalid" id="rule-match" style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); transition: all 0.3s ease;">
+                    <i data-lucide="x" style="width: 14px; height: 14px; color: var(--color-malicious);"></i>
+                    <span>Passwords must match</span>
+                </div>
             </div>
-
 
             <button type="button" id="pw-submit-btn" class="btn btn-primary" style="padding: 12px 24px; font-size: 1rem; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;" disabled>
                 <i data-lucide="shield-check" id="pw-btn-icon"></i>

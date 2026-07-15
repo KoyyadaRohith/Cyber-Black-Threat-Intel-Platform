@@ -195,48 +195,81 @@ def login():
             session['_flashes'] = flashes
         
     if request.method == 'POST':
-        username = request.form['username'].strip()
+        username_or_email = request.form['username'].strip()
         password = request.form['password']
         
-        # Supabase Authentication Flow
-        user = db.get_user(username)
+        # Resolve username and email from input
         email = None
-        if user:
-            email = user['email']
-        elif '@' in username:
-            email = username
-            user = db.get_user_by_email(email)
+        user = None
+        username = username_or_email
+        
+        if '@' in username_or_email:
+            user = db.get_user_by_email(username_or_email)
             if user:
+                email = user['email']
                 username = user['username']
+            else:
+                email = username_or_email
+                username = username_or_email.split('@')[0].replace('.', '_').replace('-', '_')
+        else:
+            user = db.get_user(username_or_email)
+            if user:
+                email = user['email']
+                username = user['username']
+            else:
+                email = None
+                username = username_or_email
                 
+        auth_res = None
+        auth_pass = hash_password(password)
+        
         if email:
+            # Try 1: Sign in with the expected SHA256 hashed password
             try:
                 from supabase import create_client
                 client = create_client(Config.SUPABASE_URL, Config.SUPABASE_ANON_KEY)
-                auth_pass = hash_password(password) # User's sign-in password is the SHA256 hex string
                 auth_res = client.auth.sign_in_with_password({"email": email, "password": auth_pass})
+                print(f"Supabase login succeeded with hashed password for {email}")
+            except Exception as auth_err_hash:
+                print(f"Supabase login with hashed password failed: {auth_err_hash}. Trying raw password...")
                 
-                if auth_res and auth_res.user:
-                    session['username'] = username
-                    session['email'] = email
-                    session['user_id'] = auth_res.user.id
-                    session['full_name'] = user.get('full_name', username.title()) if user else username.title()
-                    session['mobile_number'] = user.get('mobile_number', '') if user else ''
-                    session['access_token'] = auth_res.session.access_token
+                # Try 2: Sign in with the raw password as a fallback
+                try:
+                    auth_res = client.auth.sign_in_with_password({"email": email, "password": password})
+                    print(f"Supabase login succeeded with raw password fallback for {email}. Migrating password to hashed format...")
                     
-                    # Force-update mock_mode to False on login to enable live API checking
-                    cfg = db.get_settings(username)
-                    if cfg and cfg.get('mock_mode') is not False:
-                        cfg['mock_mode'] = False
-                        db.save_settings(username, cfg)
-                    
-                    add_notification('log-in', 'var(--color-safe)', 'Login Successful', f"Welcome back, Analyst {session['full_name']}.")
-                    flash(f"Welcome back, Analyst {session['full_name']}.", "success")
-                    return redirect(url_for('dashboard'))
-            except Exception as auth_err:
-                print(f"Supabase auth failed: {auth_err}")
+                    # Automatically migrate password to hashed format in Supabase Auth
+                    try:
+                        db.update_password(username, auth_pass)
+                        print(f"Successfully migrated password to hashed format for {username}")
+                    except Exception as migration_err:
+                        print(f"[WARNING] Failed to migrate password to hashed format: {migration_err}")
+                except Exception as auth_err_raw:
+                    print(f"Supabase login with raw password fallback failed: {auth_err_raw}")
+            
+            if auth_res and auth_res.user:
+                # If public profile is missing, synchronize it now
+                if not user:
+                    user = db.sync_user_profile(auth_res.user.id, email, username, auth_pass)
                 
-        # Offline/Mock fallback for registration/testing
+                session['username'] = user['username'] if user else username
+                session['email'] = email
+                session['user_id'] = auth_res.user.id
+                session['full_name'] = user.get('full_name', session['username'].title()) if user else username.title()
+                session['mobile_number'] = user.get('mobile_number', '') if user else ''
+                session['access_token'] = auth_res.session.access_token
+                
+                # Force-update mock_mode to False on login to enable live API checking
+                cfg = db.get_settings(session['username'])
+                if cfg and cfg.get('mock_mode') is not False:
+                    cfg['mock_mode'] = False
+                    db.save_settings(session['username'], cfg)
+                
+                add_notification('log-in', 'var(--color-safe)', 'Login Successful', f"Welcome back, Analyst {session['full_name']}.")
+                flash(f"Welcome back, Analyst {session['full_name']}.", "success")
+                return redirect(url_for('dashboard'))
+                
+        # Offline/Mock fallback for registration/testing (in case Supabase is completely unavailable/offline)
         if user and user['password_hash'] == hash_password(password):
             session['username'] = user['username']
             session['email'] = user['email']
@@ -247,7 +280,7 @@ def login():
             flash(f"Welcome back, Analyst {session['full_name']}.", "success")
             return redirect(url_for('dashboard'))
             
-        flash("Invalid credentials. Please try again.", "error")
+        flash("Invalid credentials. Please check your username/email and password.", "error")
         
     return render_template('login.html')
 
@@ -299,24 +332,51 @@ def forgot_password():
         new_password = data.get('new_password', '').strip()
         confirm_password = data.get('confirm_password', '').strip()
         
+        print(f"[DEBUG] Forgot Password request received for email: '{email}'")
+        
         if not email or not new_password or not confirm_password:
+            print("[DEBUG] Validation failed: missing fields")
             return jsonify(success=False, message="All fields are required."), 400
             
         if new_password != confirm_password:
+            print("[DEBUG] Validation failed: password mismatch")
             return jsonify(success=False, message="New passwords do not match."), 400
             
         # Server-side validation
         is_strong, strength_err = validate_password_strength(new_password)
         if not is_strong:
+            print(f"[DEBUG] Validation failed: weak password: {strength_err}")
             return jsonify(success=False, message=strength_err), 400
             
-        # Find user by email
+        # Find user by email or username fallback
+        print(f"[DEBUG] Performing email lookup via db.get_user_by_email for '{email}'")
         user = db.get_user_by_email(email)
+        print(f"[DEBUG] db.get_user_by_email returned: {user}")
         if not user:
-            return jsonify(success=False, message="Invalid email or unable to reset password."), 400
+            print(f"[DEBUG] Falling back to username lookup via db.get_user for '{email}'")
+            user = db.get_user(email)
+            print(f"[DEBUG] db.get_user returned: {user}")
+            
+        # Direct Supabase client query inside route for verification
+        if db.supabase:
+            try:
+                direct_res = db.supabase.table('users').select('*').ilike('email', email).execute()
+                print(f"[DEBUG] Direct email query inside route returned data: {direct_res.data}")
+                direct_user = db.supabase.table('users').select('*').ilike('username', email).execute()
+                print(f"[DEBUG] Direct username query inside route returned data: {direct_user.data}")
+            except Exception as direct_err:
+                print(f"[DEBUG] Direct query inside route failed: {direct_err}")
+        else:
+            print("[DEBUG] db.supabase is None in route")
+            
+        print(f"[DEBUG] User lookup result: {user}")
+        if not user:
+            print(f"[DEBUG] User not found by email/username '{email}'")
+            return jsonify(success=False, message="Invalid email or username, unable to reset password."), 400
             
         # Reset password directly
         success, msg = db.update_password(user['username'], hash_password(new_password))
+        print(f"[DEBUG] Reset password operation outcome: success={success}, msg={msg}")
         if success:
             session.clear()  # Invalidate existing session
             return jsonify(success=True, message="Your account password has been reset successfully.")
@@ -1390,7 +1450,38 @@ def change_password():
         return jsonify(success=False, message=strength_err), 400
         
     user = db.get_user(session['username'])
-    if not user or user['password_hash'] != hash_password(current_password):
+    if not user:
+        return jsonify(success=False, message="User profile not found."), 400
+        
+    password_correct = False
+    
+    # 1. Local password_hash check (if set)
+    if user.get('password_hash') and user['password_hash'] == hash_password(current_password):
+        password_correct = True
+        
+    # 2. Supabase Auth sign-in verification check as fallback/sync verification
+    if not password_correct:
+        try:
+            from supabase import create_client
+            client = create_client(Config.SUPABASE_URL, Config.SUPABASE_ANON_KEY)
+            
+            # Try 2.1: Sign in with the expected hashed password
+            try:
+                auth_res = client.auth.sign_in_with_password({"email": session['email'], "password": hash_password(current_password)})
+                if auth_res and auth_res.user:
+                    password_correct = True
+            except Exception:
+                # Try 2.2: Sign in with raw password fallback
+                try:
+                    auth_res = client.auth.sign_in_with_password({"email": session['email'], "password": current_password})
+                    if auth_res and auth_res.user:
+                        password_correct = True
+                except Exception:
+                    pass
+        except Exception:
+            pass
+            
+    if not password_correct:
         return jsonify(success=False, message="Current password is incorrect."), 400
         
     success, msg = db.update_password(session['username'], hash_password(new_password))
@@ -1635,5 +1726,8 @@ def ai_generate_report(ip_address):
 
 if __name__ == '__main__':
     print("[*] Starting Cyber Black Threat Intel Platform...")
-    print(f"[*] Base Workspace: {Config.BASE_DIR}")
+    try:
+        print(f"[*] Base Workspace: {Config.BASE_DIR}")
+    except UnicodeEncodeError:
+        print(f"[*] Base Workspace: {str(Config.BASE_DIR).encode('ascii', errors='replace').decode('ascii')}")
     app.run(port=Config.PORT, debug=Config.DEBUG)
