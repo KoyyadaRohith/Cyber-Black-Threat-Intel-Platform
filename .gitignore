@@ -5,6 +5,8 @@
 __pycache__/
 *.py[cod]
 reports/
+exports/
 uploads/
 static/uploads/
 database/legacy_csv/
+database/threat_intel_cache.csv

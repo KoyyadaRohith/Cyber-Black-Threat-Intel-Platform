@@ -279,6 +279,12 @@ Cyber-Black-Threat-Intel-Platform/
     └── legacy_csv/
 ```
 
+## Runtime file storage
+
+Local development stores generated reports, exports, and temporary uploads under the project directory. When Vercel sets `VERCEL`, the same runtime files are stored under `/tmp/cbtip` so report generation and avatar uploads do not write to the read-only deployment bundle.
+
+Vercel temporary storage is not durable between function instances or deployments. Persistent application records remain in Supabase; files under `database/legacy_csv/` are read-only seed data. The History PDF button and print-ready report pages continue to use the browser's print dialog.
+
 ---
 
 # ⚙️ Prerequisites

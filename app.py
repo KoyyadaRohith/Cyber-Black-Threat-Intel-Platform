@@ -6,8 +6,10 @@ import re
 import secrets
 import requests
 from datetime import datetime, timedelta
+from pathlib import Path
 from urllib.parse import urlencode
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response, send_file
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response, send_file, send_from_directory
+from werkzeug.utils import secure_filename
 
 # Load configuration and services
 from config import Config
@@ -27,6 +29,35 @@ Config.init_folders()
 app = Flask(__name__)
 app.config.from_object(Config)
 app.jinja_env.globals['Config'] = Config
+handler = app
+
+
+def _send_runtime_export(directory, filename, content_factory, mimetype, as_attachment, newline=None):
+    """Write a generated export to writable storage and return it as a download/print page."""
+    try:
+        safe_filename = os.path.basename(filename.replace("\\", "/"))
+        if safe_filename in {"", ".", ".."}:
+            raise ValueError("Generated export filename is empty.")
+
+        directory.mkdir(parents=True, exist_ok=True)
+        file_path = directory / safe_filename
+        with file_path.open("w", encoding="utf-8", newline=newline) as export_file:
+            export_file.write(content_factory())
+
+        return send_file(
+            file_path,
+            mimetype=mimetype,
+            as_attachment=as_attachment,
+            download_name=safe_filename
+        )
+    except Exception:
+        app.logger.exception("Failed to generate report export")
+        return Response(
+            "The requested export could not be generated. Please try again.",
+            status=500,
+            mimetype="text/plain"
+        )
+
 
 # Password hashing helpers
 def hash_password(password):
@@ -100,9 +131,12 @@ def inject_globals():
     if session.get('photo_url'):
         avatar_url = session['photo_url']
     elif 'username' in session:
-        avatar_filename = f"{session['username']}.png"
-        avatar_filepath = os.path.join(app.static_folder, 'uploads', 'avatars', avatar_filename)
-        if os.path.exists(avatar_filepath):
+        avatar_filename = f"{secure_filename(session['username'])}.png"
+        avatar_filepath = Config.UPLOAD_AVATARS / avatar_filename
+        legacy_avatar_filepath = os.path.join(app.static_folder, 'uploads', 'avatars', avatar_filename)
+        if avatar_filepath.is_file():
+            avatar_url = url_for('uploaded_avatar', filename=avatar_filename)
+        elif os.path.exists(legacy_avatar_filepath):
             avatar_url = url_for('static', filename=f'uploads/avatars/{avatar_filename}')
             
     # Load dynamic notifications list from database
@@ -1104,10 +1138,10 @@ def download_report(report_id):
     if report_id.startswith('individual_'):
         ip = report_id.replace('individual_', '')
         # Find matching details in history
-        row = next((r for r in history if r['ip'] == ip and r['source'] == 'manual'), None)
+        row = next((r for r in history if r.get('ip') == ip and r.get('source') == 'manual'), None)
         if not row:
             # Try finding it in any bulk entries as fallback
-            row = next((r for r in history if r['ip'] == ip), None)
+            row = next((r for r in history if r.get('ip') == ip), None)
             
         if not row:
             flash("Target log data not found.", "error")
@@ -1192,21 +1226,19 @@ def download_report(report_id):
             'tags': row.get('tags', '')
         }
         
-        # Save individual HTML file to reports/pdf/
-        html_content = report_gen.generate_html_print_individual(details)
         filename = f"MaliciousIP_Report_{ip}.html"
-        file_path = Config.REPORTS_PDF / filename
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(html_content)
+        export_response = _send_runtime_export(
+            Config.REPORTS_PDF,
+            filename,
+            lambda: report_gen.generate_html_print_individual(details),
+            "text/html",
+            as_attachment=False
+        )
+        if export_response.status_code >= 400:
+            return export_response
         
         add_notification('file-down', 'var(--primary)', f'Report Exported: {ip}', f'Individual threat report downloaded for {ip}.')
-        
-        return send_file(
-            file_path,
-            mimetype="text/html",
-            as_attachment=False,
-            download_name=filename
-        )
+        return export_response
             
     # Case 2: Download bulk report formats
     elif report_id.startswith('bulk_'):
@@ -1221,7 +1253,7 @@ def download_report(report_id):
             format_type = 'pdf' # default print HTML page
             
         # Query matching database rows
-        batch_results = [r for r in history if r['source'] == batch_id]
+        batch_results = [r for r in history if r.get('source') == batch_id]
         if not batch_results:
             flash("Ingestion batch records not located.", "error")
             return redirect(url_for('reports'))
@@ -1232,95 +1264,81 @@ def download_report(report_id):
         
         stats = {
             'total': len(batch_results),
-            'safe': len([r for r in batch_results if r['classification'] == 'Safe']),
-            'suspicious': len([r for r in batch_results if r['classification'] == 'Suspicious']),
-            'malicious': len([r for r in batch_results if r['classification'] == 'Malicious'])
+            'safe': len([r for r in batch_results if r.get('classification') == 'Safe']),
+            'suspicious': len([r for r in batch_results if r.get('classification') == 'Suspicious']),
+            'malicious': len([r for r in batch_results if r.get('classification') == 'Malicious'])
         }
         metadata = {'filename': filename}
         
         if format_type == 'csv':
             # Export CSV file download
-            csv_data = report_gen.generate_csv_report(batch_results)
             fn = f"MaliciousIP_Batch_Report_{filename}.csv"
-            file_path = Config.REPORTS_CSV / fn
-            with open(file_path, "w", encoding="utf-8", newline="") as f:
-                f.write(csv_data)
-                
-            return send_file(
-                file_path,
-                mimetype="text/csv",
+            return _send_runtime_export(
+                Config.REPORTS_CSV,
+                fn,
+                lambda: report_gen.generate_csv_report(batch_results),
+                "text/csv",
                 as_attachment=True,
-                download_name=fn
+                newline=""
             )
             
         elif format_type == 'txt':
-            
             # Export TXT summary download
-            txt_data = report_gen.generate_txt_bulk(batch_results, metadata, stats)
             fn = f"MaliciousIP_Batch_Report_{filename}.txt"
-            file_path = Config.REPORTS_TXT / fn
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(txt_data)
-                
-            return send_file(
-                file_path,
-                mimetype="text/plain",
-                as_attachment=True,
-                download_name=fn
+            return _send_runtime_export(
+                Config.REPORTS_TXT,
+                fn,
+                lambda: report_gen.generate_txt_bulk(batch_results, metadata, stats),
+                "text/plain",
+                as_attachment=True
             )
             
-        else: # Print HTML window
-            html_content = report_gen.generate_html_print_bulk(batch_results, metadata, stats)
+        else:  # Print HTML window
             fn = f"MaliciousIP_Batch_Report_{filename}.html"
-            file_path = Config.REPORTS_PDF / fn
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(html_content)
-                
-            return send_file(
-                file_path,
-                mimetype="text/html",
-                as_attachment=False,
-                download_name=fn
+            return _send_runtime_export(
+                Config.REPORTS_PDF,
+                fn,
+                lambda: report_gen.generate_html_print_bulk(batch_results, metadata, stats),
+                "text/html",
+                as_attachment=False
             )
             
     # Case 3: History & Watchlist general backups (CSV and TXT)
     elif report_id in ['history_csv', 'watchlist_csv', 'history_txt', 'watchlist_txt']:
         if report_id == 'history_csv':
-            csv_data = report_gen.generate_csv_report(history)
             fn = "MaliciousIP_Investigation_History_Audit.csv"
-            file_path = Config.REPORTS_CSV / fn
             mimetype = "text/csv"
-            with open(file_path, "w", encoding="utf-8", newline="") as f:
-                f.write(csv_data)
+            content_factory = lambda: report_gen.generate_csv_report(history)
+            directory = Config.REPORTS_CSV
+            newline = ""
         elif report_id == 'history_txt':
-            txt_data = report_gen.generate_txt_history(history)
             fn = "MaliciousIP_Investigation_History_Audit.txt"
-            file_path = Config.REPORTS_TXT / fn
             mimetype = "text/plain"
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(txt_data)
+            content_factory = lambda: report_gen.generate_txt_history(history)
+            directory = Config.REPORTS_TXT
+            newline = None
         elif report_id == 'watchlist_csv':
             watchlist_data = db.get_watchlist(username)
-            csv_data = report_gen.generate_csv_report(watchlist_data)
             fn = "MaliciousIP_Watchlist_Audit.csv"
-            file_path = Config.REPORTS_CSV / fn
             mimetype = "text/csv"
-            with open(file_path, "w", encoding="utf-8", newline="") as f:
-                f.write(csv_data)
-        else: # watchlist_txt
+            content_factory = lambda: report_gen.generate_csv_report(watchlist_data)
+            directory = Config.REPORTS_CSV
+            newline = ""
+        else:  # watchlist_txt
             watchlist_data = db.get_watchlist(username)
-            txt_data = report_gen.generate_txt_watchlist(watchlist_data)
             fn = "MaliciousIP_Watchlist_Audit.txt"
-            file_path = Config.REPORTS_TXT / fn
             mimetype = "text/plain"
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(txt_data)
-            
-        return send_file(
-            file_path,
-            mimetype=mimetype,
+            content_factory = lambda: report_gen.generate_txt_watchlist(watchlist_data)
+            directory = Config.REPORTS_TXT
+            newline = None
+
+        return _send_runtime_export(
+            directory,
+            fn,
+            content_factory,
+            mimetype,
             as_attachment=True,
-            download_name=fn
+            newline=newline
         )
         
     flash("Report code not recognized.", "error")
@@ -1362,12 +1380,17 @@ def profile():
             return jsonify(success=False, message=message), 400
 
         if username and username != old_username:
-            avatar_dir = os.path.join(app.static_folder, 'uploads', 'avatars')
-            old_avatar = os.path.join(avatar_dir, f"{old_username}.png")
-            new_avatar = os.path.join(avatar_dir, f"{username}.png")
+            Config.UPLOAD_AVATARS.mkdir(parents=True, exist_ok=True)
+            old_avatar = Config.UPLOAD_AVATARS / f"{secure_filename(old_username)}.png"
+            new_avatar = Config.UPLOAD_AVATARS / f"{secure_filename(username)}.png"
             try:
-                if os.path.exists(old_avatar):
-                    os.replace(old_avatar, new_avatar)
+                if old_avatar.exists():
+                    old_avatar.replace(new_avatar)
+                else:
+                    legacy_avatar = Path(app.static_folder) / 'uploads' / 'avatars' / f"{secure_filename(old_username)}.png"
+                    if legacy_avatar.exists():
+                        import shutil
+                        shutil.copy2(legacy_avatar, new_avatar)
             except OSError:
                 pass
 
@@ -1418,17 +1441,26 @@ def upload_avatar():
     if ext not in ['.png', '.jpg', '.jpeg', '.gif']:
         return jsonify(success=False, message="Supported formats: PNG, JPG, JPEG, GIF."), 400
         
-    # Save file
-    avatar_dir = os.path.join(app.static_folder, 'uploads', 'avatars')
-    os.makedirs(avatar_dir, exist_ok=True)
-    
-    filename = f"{session['username']}.png"
-    filepath = os.path.join(avatar_dir, filename)
-    file.save(filepath)
+    filename = f"{secure_filename(session['username'])}.png"
+    if filename == ".png":
+        return jsonify(success=False, message="Invalid username for avatar filename."), 400
+
+    try:
+        Config.UPLOAD_AVATARS.mkdir(parents=True, exist_ok=True)
+        file.save(Config.UPLOAD_AVATARS / filename)
+    except OSError:
+        app.logger.exception("Failed to save uploaded avatar")
+        return jsonify(success=False, message="The profile picture could not be saved. Please try again."), 500
     
     import time
-    avatar_url = url_for('static', filename=f'uploads/avatars/{filename}') + f"?t={int(time.time())}"
+    avatar_url = url_for('uploaded_avatar', filename=filename) + f"?t={int(time.time())}"
     return jsonify(success=True, message="Profile picture updated successfully.", avatar_url=avatar_url)
+
+
+@app.route('/uploads/avatars/<path:filename>')
+def uploaded_avatar(filename):
+    return send_from_directory(Config.UPLOAD_AVATARS, filename)
+
 
 @app.route('/api/settings/change-password', methods=['POST'])
 @login_required

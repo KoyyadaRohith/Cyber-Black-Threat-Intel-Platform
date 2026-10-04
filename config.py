@@ -6,8 +6,13 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / '.env', override=True)
 
-# Detect if running on Vercel
-IS_VERCEL = os.getenv("VERCEL") is not None
+# Detect if running on Vercel / serverless environment
+IS_VERCEL = (
+    os.getenv("VERCEL") is not None
+    or os.getenv("VERCEL_ENV") is not None
+    or os.getenv("NOW_REGION") is not None
+    or bool(os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
+)
 
 # Use writable storage on Vercel
 if IS_VERCEL:
@@ -17,6 +22,7 @@ else:
 
 class Config:
     BASE_DIR = BASE_DIR
+    STORAGE_DIR = STORAGE_DIR
     
     # Flask settings
     SECRET_KEY = os.environ.get('SECRET_KEY', 'cyber-black-threat-intelligence-secret-key-1234')
@@ -26,20 +32,24 @@ class Config:
     UPLOAD_CSV = UPLOAD_FOLDER / 'csv'
     UPLOAD_TXT = UPLOAD_FOLDER / 'txt'
     UPLOAD_LOGS = UPLOAD_FOLDER / 'logs'
+    UPLOAD_AVATARS = UPLOAD_FOLDER / 'avatars'
     
     # Reports Directories
-    REPORTS_FOLDER = BASE_DIR / 'reports'
+    # Use writable temporary storage on Vercel.
+    REPORTS_FOLDER = STORAGE_DIR / 'reports'
     REPORTS_PDF = REPORTS_FOLDER / 'pdf'
     REPORTS_CSV = REPORTS_FOLDER / 'csv'
     REPORTS_TXT = REPORTS_FOLDER / 'txt'
-    
+
     # Exports Directories
-    EXPORTS_FOLDER = BASE_DIR / 'exports'
+    # Use writable temporary storage on Vercel.
+    EXPORTS_FOLDER = STORAGE_DIR / 'exports'
     GENERATED_REPORTS = EXPORTS_FOLDER / 'generated_reports'
     DOWNLOADED_FILES = EXPORTS_FOLDER / 'downloaded_files'
-    
-    # Database path
-    DB_FOLDER = BASE_DIR / 'database'
+
+    # Database / runtime cache path
+    # Use writable temporary storage on Vercel.
+    DB_FOLDER = STORAGE_DIR / 'database'
     
     # API credentials
     ABUSEIPDB_API_KEY = os.environ.get('ABUSEIPDB_API_KEY', '')
@@ -62,14 +72,14 @@ class Config:
     def init_folders(cls):
         """Create necessary project directories if they don't exist."""
         folders = [
-            cls.UPLOAD_CSV, cls.UPLOAD_TXT, cls.UPLOAD_LOGS,
+            cls.UPLOAD_CSV, cls.UPLOAD_TXT, cls.UPLOAD_LOGS, cls.UPLOAD_AVATARS,
             cls.REPORTS_PDF, cls.REPORTS_CSV, cls.REPORTS_TXT,
             cls.GENERATED_REPORTS, cls.DOWNLOADED_FILES,
             cls.DB_FOLDER
         ]
+
         for folder in folders:
             try:
                 folder.mkdir(parents=True, exist_ok=True)
-            except Exception as e:
-                print(f"[WARNING] Could not create folder: {folder}")
-                print(e)
+            except OSError as error:
+                print(f"[WARNING] Could not create runtime folder: {folder}: {error}")

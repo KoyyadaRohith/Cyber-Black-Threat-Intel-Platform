@@ -123,11 +123,11 @@ def generate_txt_bulk(results, metadata, stats):
     report.append(f"{'IP ADDRESS':<20}{'SCORE':<8}{'CLASS':<15}{'ISP NETWORK':<30}{'COUNTRY':<15}")
     report.append("-" * 88)
     for row in results:
-        ip = row['ip']
-        score = f"{row['risk_score']}/100"
-        classification = row['classification']
-        isp = row['isp'][:28]
-        country = row['country']
+        ip = row.get('ip', 'Unknown')
+        score = f"{row.get('risk_score', 0)}/100"
+        classification = row.get('classification', 'Safe')
+        isp = str(row.get('isp', 'Unknown'))[:28]
+        country = row.get('country', 'Unknown')
         report.append(f"{ip:<20}{score:<8}{classification:<15}{isp:<30}{country:<15}")
     report.append("======================================================================")
     report.append("                     [SECURE CONSOLE REPORT LOG]")
@@ -269,11 +269,11 @@ def generate_html_print_bulk(results, metadata, stats):
     rows_html = "".join([
         f"""
         <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #ddd; font-family: monospace;">{row['ip']}</td>
-            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{row['classification']}</td>
-            <td style="padding: 8px; border-bottom: 1px solid #ddd; font-family: monospace;">{row['risk_score']}/100</td>
-            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{row['isp']}</td>
-            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{row['country']}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #ddd; font-family: monospace;">{row.get('ip', 'Unknown')}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{row.get('classification', 'Safe')}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #ddd; font-family: monospace;">{row.get('risk_score', 0)}/100</td>
+            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{row.get('isp', 'Unknown')}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #ddd;">{row.get('country', 'Unknown')}</td>
         </tr>
         """ for row in results
     ])
@@ -379,11 +379,12 @@ def generate_txt_watchlist(watchlist_data):
     report.append(f"{'IP ADDRESS':<20}{'SCORE':<8}{'CLASS':<15}{'STATUS':<12}{'DATE ADDED':<12}")
     report.append("-" * 67)
     for row in watchlist_data:
-        ip = row['ip']
-        score = f"{row['risk_score']}/100"
-        classification = row['classification']
-        status = row['status']
-        date = row['date_added'].split('T')[0]
+        ip = row.get('ip', 'Unknown')
+        score = f"{row.get('risk_score', 0)}/100"
+        classification = row.get('classification', 'Safe')
+        status = row.get('status', 'Active')
+        raw_date = row.get('date_added') or ''
+        date = raw_date.split('T')[0] if 'T' in raw_date else raw_date[:10]
         report.append(f"{ip:<20}{score:<8}{classification:<15}{status:<12}{date:<12}")
     report.append("======================================================================")
     return "\n".join(report)
@@ -404,11 +405,12 @@ def generate_txt_history(history_data):
     report.append(f"{'TIMESTAMP':<18}{'IP ADDRESS':<20}{'SCORE':<8}{'CLASS':<15}{'COUNTRY':<15}")
     report.append("-" * 76)
     for row in history_data:
-        date = row['date'].split('T')[0] + " " + row['date'].split('T')[1][:5] if 'T' in row['date'] else row['date'][:16]
-        ip = row['ip']
-        score = f"{row['risk_score']}/100"
-        classification = row['classification']
-        country = row['country']
+        raw_date = row.get('date') or ''
+        date = raw_date.split('T')[0] + " " + raw_date.split('T')[1][:5] if 'T' in raw_date else raw_date[:16]
+        ip = row.get('ip', 'Unknown')
+        score = f"{row.get('risk_score', 0)}/100"
+        classification = row.get('classification', 'Safe')
+        country = row.get('country', 'Unknown')
         report.append(f"{date:<18}{ip:<20}{score:<8}{classification:<15}{country:<15}")
     report.append("======================================================================")
     return "\n".join(report)
