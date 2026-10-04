@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.py[cod]
+reports/
+uploads/
+static/uploads/
+database/legacy_csv/

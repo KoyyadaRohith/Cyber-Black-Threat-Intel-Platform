@@ -1,3 +1,4 @@
+import csv
 import os
 from datetime import datetime
 from dotenv import load_dotenv
@@ -107,6 +108,25 @@ def _get_user_uuid(username_or_email):
     except Exception:
         pass
         
+    return None
+
+
+def _get_legacy_user(field, value):
+    """Load a migrated user when the Supabase profile is unavailable."""
+    users_file = BASE_DIR / 'database' / 'legacy_csv' / 'users.csv'
+    if not users_file.exists():
+        return None
+
+    try:
+        with users_file.open('r', encoding='utf-8-sig', newline='') as file:
+            for user_data in csv.DictReader(file):
+                if user_data.get(field, '').strip().casefold() == value.strip().casefold():
+                    user_data.setdefault('password_hash', '')
+                    user_data.setdefault('full_name', user_data.get('username', '').title())
+                    user_data.setdefault('mobile_number', '')
+                    return user_data
+    except (OSError, csv.Error) as error:
+        print(f"Error reading legacy users: {error}")
     return None
 
 # --- User Management ---
@@ -267,33 +287,31 @@ def sync_user_profile(user_uuid, email, username=None, password_hash=""):
 
 def get_user(username):
     """Retrieve user details by username."""
-    if not supabase:
-        return None
-    try:
-        res = supabase.table('users').select('*').ilike('username', username).execute()
-        if res.data:
-            user_data = res.data[0]
-            if 'password_hash' not in user_data:
-                user_data['password_hash'] = ''
-            return user_data
-    except Exception as e:
-        print(f"Error in get_user: {e}")
-    return None
+    if supabase:
+        try:
+            res = supabase.table('users').select('*').ilike('username', username).execute()
+            if res.data:
+                user_data = res.data[0]
+                if 'password_hash' not in user_data:
+                    user_data['password_hash'] = ''
+                return user_data
+        except Exception as e:
+            print(f"Error in get_user: {e}")
+    return _get_legacy_user('username', username)
 
 def get_user_by_email(email):
     """Retrieve user details by email."""
-    if not supabase:
-        return None
-    try:
-        res = supabase.table('users').select('*').ilike('email', email).execute()
-        if res.data:
-            user_data = res.data[0]
-            if 'password_hash' not in user_data:
-                user_data['password_hash'] = ''
-            return user_data
-    except Exception as e:
-        print(f"Error in get_user_by_email: {e}")
-    return None
+    if supabase:
+        try:
+            res = supabase.table('users').select('*').ilike('email', email).execute()
+            if res.data:
+                user_data = res.data[0]
+                if 'password_hash' not in user_data:
+                    user_data['password_hash'] = ''
+                return user_data
+        except Exception as e:
+            print(f"Error in get_user_by_email: {e}")
+    return _get_legacy_user('email', email)
 
 def update_user(current_username, full_name=None, username=None, email=None, location=None, bio=None, role=None, organization=None):
     """Update user profile record."""
